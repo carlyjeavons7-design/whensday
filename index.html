@@ -171,6 +171,15 @@
   .cal-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#C06A4F;}
   .clash-note{display:flex;align-items:flex-start;gap:8px;background:#FBEEE8;border:1px solid #EAC7BA;color:#8A4A38;border-radius:11px;padding:9px 12px;font-size:12.5px;line-height:1.4;margin:-6px 0 14px;}
   .clash-note svg{flex:0 0 auto;width:14px;height:14px;margin-top:1px;}
+  .wh-q{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--text);margin:28px 0 12px;}
+  .wh-q .wh-opt{font-family:'General Sans',sans-serif;font-size:14px;font-weight:500;color:var(--muted2);}
+  .wc-people{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:2px;}
+  .wc-av{position:relative;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;cursor:pointer;flex:0 0 auto;}
+  .wc-av .wc-x{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#2C2519;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
+  .wc-av:hover .wc-x{opacity:1;}
+  .wc-add{width:44px;height:44px;border-radius:50%;border:1.5px dashed var(--muted3);background:transparent;color:var(--muted2);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;min-height:auto;flex:0 0 auto;}
+  .wc-add:hover{border-color:var(--accent);color:var(--accent);}
+  .wc-input input{width:150px;margin:0;padding:11px 13px;}
   .result-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px;}
   .result-cal-cell{min-height:52px;border-radius:13px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid var(--border);background:#FFFFFF;cursor:pointer;}
   .result-cal-cell.blank{visibility:hidden;}
@@ -1605,27 +1614,56 @@ async function renderCreate(){
     '<a class="top-link" href="?admin=1">&larr; My plans</a>' +
     '<div class="card">' +
     heroBlock({ lockup: true }) +
-    '<p class="subtitle">Pick some candidate days, share a link, see what works for everyone.</p>' +
-    '<label for="title">Plan name</label>' +
+    '<p class="subtitle">Four questions stand between you and a plan.</p>' +
+    '<div class="wh-q">What’s the plan?</div>' +
     '<input type="text" id="title" placeholder="e.g. Cabin weekend" maxlength="60" />' +
-    '<label for="organizerName">Organizer</label>' +
-    '<input type="text" id="organizerName" value="'+escapeHtml(getMyName())+'" placeholder="Your name" maxlength="40" />' +
-    '<label>Candidate days</label>' +
-    '<p class="muted" style="margin:-10px 0 10px;">Tap all the days that could work.</p>' +
+    '<div class="wh-q">Where’s it happening? <span class="wh-opt">optional</span></div>' +
+    '<input type="text" id="location" placeholder="e.g. Tahoe cabin, or an address" maxlength="80" />' +
+    '<div class="wh-q">Who’s invited?</div>' +
+    '<div id="whoWrap" class="wc-people"></div>' +
+    '<p class="muted" style="font-size:13px;margin:10px 0 0;">Add them now, or just share the link and let them hop in.</p>' +
+    '<div class="wh-q">When could it work?</div>' +
     '<div class="cal-nav"><button type="button" id="prevM">&larr;</button><strong id="calLabel"></strong><button type="button" id="nextM">&rarr;</button></div>' +
     '<div class="cal-grid" id="calGrid"></div>' +
-    '<div id="dateList" style="margin-bottom:18px;"></div>' +
-    '<p class="plan-section" style="margin:4px 0 10px;">Optional details</p>' +
-    '<label for="location">Location</label>' +
-    '<input type="text" id="location" placeholder="e.g. Tahoe cabin, or an address" maxlength="80" />' +
-    '<label for="eventNote">Note about the plan</label>' +
-    '<input type="text" id="eventNote" placeholder="e.g. Bring $50 for groceries" maxlength="140" />' +
-    '<label for="timeLabel">Time (fixed for each day)</label>' +
-    '<input type="text" id="timeLabel" placeholder="e.g. 7:00-9:00 PM, or leave blank for all day" maxlength="60" />' +
-    '<div class="error" id="err" style="display:none;"></div>' +
-    '<button class="btn-brand" id="createBtn">&#10022; Create plan</button>' +
+    '<div id="dateList" style="margin-bottom:4px;"></div>' +
+    '<p class="muted" style="font-size:12.5px;margin:2px 0 12px;">Pick a few — everyone votes and the best day rises to the top.</p>' +
+    '<input type="text" id="timeLabel" placeholder="Add a time (e.g. 7–9 PM)" maxlength="60" />' +
+    '<div class="error" id="err" style="display:none;margin-top:14px;"></div>' +
+    '<button class="btn-brand" id="createBtn" style="margin-top:20px;">Create plan →</button>' +
     '</div>'
   );
+  // Who's invited — people added right here
+  const people = [];
+  let whoAdding = false;
+  function commitWho(v){
+    if (!whoAdding) return;
+    whoAdding = false;
+    const name = (v || '').trim();
+    if (name) people.push({ name: name, color: avatarColor(name) });
+    renderWho();
+  }
+  function renderWho(){
+    const wrap = document.getElementById('whoWrap');
+    if (!wrap) return;
+    let html = people.map(function(p, i){
+      return '<span class="wc-av" data-i="'+i+'" title="Remove" style="background:'+p.color+'">'+escapeHtml(p.name.charAt(0).toUpperCase())+'<span class="wc-x">&times;</span></span>';
+    }).join('');
+    html += whoAdding
+      ? '<span class="wc-input"><input type="text" id="whoName" placeholder="Name" maxlength="40" autocomplete="off" /></span>'
+      : '<button type="button" class="wc-add" id="whoAdd" aria-label="Add person">+</button>';
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.wc-av').forEach(function(av){
+      av.onclick = function(){ people.splice(parseInt(av.getAttribute('data-i'),10), 1); renderWho(); };
+    });
+    if (whoAdding){
+      const inp = document.getElementById('whoName'); inp.focus();
+      inp.onkeydown = function(e){ if (e.key === 'Enter'){ e.preventDefault(); commitWho(inp.value); } else if (e.key === 'Escape'){ whoAdding = false; renderWho(); } };
+      inp.onblur = function(){ commitWho(inp.value); };
+    } else {
+      document.getElementById('whoAdd').onclick = function(){ whoAdding = true; renderWho(); };
+    }
+  }
+  renderWho();
   const dates = [];
   const today = new Date();
   let calYear = today.getFullYear(), calMonth = today.getMonth();
@@ -1679,15 +1717,15 @@ async function renderCreate(){
   renderDates();
 
   document.getElementById('createBtn').onclick = async () => {
+    if (whoAdding) commitWho(document.getElementById('whoName') ? document.getElementById('whoName').value : '');
     const errEl = document.getElementById('err'); errEl.style.display = 'none';
     const title = document.getElementById('title').value.trim() || 'Untitled plan';
-    const organizerName = document.getElementById('organizerName').value.trim() || null;
-    setMyName(organizerName);
+    const organizerName = getMyName() || null;
     const location = document.getElementById('location').value.trim() || null;
-    const eventNote = document.getElementById('eventNote').value.trim() || null;
-    const timeLabel = document.getElementById('timeLabel').value.trim() || null;
-    if (dates.length === 0){ errEl.textContent = 'Select at least one candidate day.'; errEl.style.display = 'block'; return; }
-    const payload = { title: title, dates: dates.slice(), timeLabel: timeLabel, organizerName: organizerName, location: location, eventNote: eventNote };
+    const timeLabel = document.getElementById('timeLabel').value.trim();
+    if (dates.length === 0){ errEl.textContent = 'Pick at least one day that could work.'; errEl.style.display = 'block'; return; }
+    if (!timeLabel){ errEl.textContent = 'Add a time — it’s the same for each day.'; errEl.style.display = 'block'; return; }
+    const payload = { title: title, dates: dates.slice(), timeLabel: timeLabel, organizerName: organizerName, location: location, eventNote: null, people: people.slice() };
     // build the plan first — then have them make an account to save it
     if (!currentUser){
       renderAuth({
@@ -1717,6 +1755,15 @@ async function finalizeCreatePlan(payload){
     return;
   }
   plan.friends = []; plan.dayResponses = []; plan.knownDates = plan.dates.slice().sort(); plan.candidateDates = plan.dates.slice().sort(); plan.pendingDates = []; plan.addedBy = {};
+  // add the people invited during create
+  if (payload.people && payload.people.length){
+    for (const person of payload.people){
+      try {
+        const { data: friend } = await sb.rpc('join_plan', { p_plan_id: plan.id, p_name: person.name, p_color: person.color || avatarColor(person.name) });
+        if (friend) plan.friends.push(friend);
+      } catch(e){}
+    }
+  }
   addMyEvent(plan);
   markOrganizer(plan.id);
   unlockAdmin(plan.id);
@@ -1774,7 +1821,9 @@ function showWhoAreYouModal(plan){
     '<h2 style="margin:0 0 6px;font-size:20px;text-align:center;">Who are you?</h2>' +
     (hasRoster
       ? ('<p class="muted" style="text-align:center;margin:0 0 18px;">Tap your photo to continue.</p>' +
-         '<div id="modalPickGrid" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:6px;"></div>')
+         '<div id="modalPickGrid" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-bottom:6px;"></div>' +
+         '<div id="addSelfWrap" style="text-align:center;margin-top:16px;"><a class="top-link" id="addSelfLink" href="#">I\'m not listed — add me</a></div>' +
+         '<div id="addSelfForm" style="display:none;margin-top:12px;"></div>')
       : ('<p class="muted" style="text-align:center;margin:0 0 18px;">'+plan.candidateDates.length+' candidate day'+(plan.candidateDates.length===1?'':'s')+'</p>' +
          nameFormHtml())
     ) +
@@ -1797,6 +1846,18 @@ function showWhoAreYouModal(plan){
         if (friend) pickFriend(plan, friend);
       };
     });
+    const addSelfLink = overlay.querySelector('#addSelfLink');
+    const addSelfForm = overlay.querySelector('#addSelfForm');
+    if (addSelfLink && addSelfForm){
+      addSelfLink.onclick = (e) => {
+        e.preventDefault();
+        addSelfLink.parentElement.style.display = 'none';
+        addSelfForm.style.display = 'block';
+        addSelfForm.innerHTML = nameFormHtml();
+        wireNameForm(plan, () => overlay.remove());
+        const nm = addSelfForm.querySelector('#name'); if (nm) nm.focus();
+      };
+    }
   } else {
     wireNameForm(plan, () => overlay.remove());
   }
