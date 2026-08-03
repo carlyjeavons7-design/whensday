@@ -191,6 +191,13 @@
   .sp-lock{position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;}
   .sp-lock svg{width:18px;height:18px;}
   .sp-lock span{font-size:13px;font-weight:700;letter-spacing:-.02em;color:#FBF7EE;text-shadow:0 1px 4px rgba(0,0,0,.35);}
+  .sp-msg{border-radius:16px;overflow:hidden;background:#ECE7DC;border:1px solid var(--border);}
+  .sp-msg .sp{border-radius:0;border:none;}
+  .sp-foot{padding:11px 14px;}
+  .sp-foot .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14.5px;color:var(--text);}
+  .sp-foot .u{font-size:12.5px;color:var(--muted2);margin-top:2px;}
+  .sp-edit{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(255,252,245,.94);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px -3px rgba(44,37,25,.45);color:var(--text);z-index:2;}
+  .sp-edit svg{width:16px;height:16px;}
   .faces{display:flex;flex-wrap:wrap;gap:14px;}
   .face{position:relative;width:56px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;text-transform:none;letter-spacing:normal;}
   .face-cam{position:absolute;top:-3px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #FFFCF5;line-height:1;}
@@ -383,6 +390,24 @@
   .lc-icon{flex:0 0 auto;width:46px;height:46px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
   .lc-icon svg{width:100%;height:100%;display:block;}
   /* scene 3 — responses (board, no card) */
+  .vote-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:20px 18px;max-width:430px;margin:36px auto 0;box-shadow:0 30px 60px -46px rgba(44,37,25,.5);}
+  .vote-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;}
+  .vote-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--text);}
+  .vote-who{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted1);}
+  .vw-av{position:relative;overflow:hidden;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+  .vt-row{display:flex;align-items:center;gap:12px;padding:8px 0;}
+  .vt-day{width:78px;flex:0 0 auto;font-size:14px;font-weight:600;color:var(--text);}
+  .vt-opts{display:flex;gap:7px;flex:1;}
+  .vt-opt{flex:1;text-align:center;font-size:12.5px;font-weight:700;padding:9px 4px;border-radius:10px;border:1px solid var(--border);background:#FFFFFF;color:var(--muted2);transition:background .35s cubic-bezier(.16,1,.3,1),color .35s,border-color .35s,transform .35s cubic-bezier(.16,1,.3,1);}
+  .vt-opt.on.no{background:var(--no);border-color:var(--no);color:#fff;}
+  .vt-opt.on.free{background:#AEC9E0;border-color:#AEC9E0;color:#2F4F7A;}
+  .vt-opt.on.top{background:var(--pref);border-color:var(--pref);color:#fff;}
+  .vt-opt.tap{animation:vtTap .45s cubic-bezier(.16,1,.3,1);}
+  @keyframes vtTap{0%{transform:scale(1);}42%{transform:scale(.88);}100%{transform:scale(1);}}
+  .vote-submit{margin-top:16px;}
+  .vt-submit-btn{display:block;text-align:center;background:var(--accent);color:#FBF7EE;font-weight:700;font-size:15px;padding:12px;border-radius:12px;transition:transform .45s cubic-bezier(.16,1,.3,1),background .4s;}
+  .vt-submit-btn.press{transform:scale(.96);}
+  .vt-submit-btn.done{background:var(--pref);}
   .board{margin-top:36px;}
   .board-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:22px;}
   .board-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--text);}
@@ -965,6 +990,31 @@ function renderLanding(){
       '</div>' +
     '</section>';
 
+  // scene 2.5 — voting (what a guest actually does with the link)
+  const voter = WALK_PEOPLE[2]; // Jess
+  function vtRow(day){
+    return '<div class="vt-row"><span class="vt-day">'+day+'</span>' +
+      '<span class="vt-opts">' +
+        '<span class="vt-opt no">Can’t</span>' +
+        '<span class="vt-opt free">Free</span>' +
+        '<span class="vt-opt top">Top</span>' +
+      '</span></div>';
+  }
+  const sceneVote =
+    '<section class="scene scene-lead" data-scene="vote">' +
+      '<div class="scene-kicker">Voting takes seconds</div>' +
+      '<h2 class="scene-h">Everyone marks the days that work.</h2>' +
+      '<p class="scene-p">They open the link, tap each day, and they’re done — no app, no login.</p>' +
+      '<div class="vote-card">' +
+        '<div class="vote-head">' +
+          '<span class="vote-title">Cabin weekend</span>' +
+          '<span class="vote-who"><span class="vw-av" style="background:'+voter[1]+'">'+voter[0].charAt(0)+avFace(voter[2])+'</span>'+voter[0]+'</span>' +
+        '</div>' +
+        vtRow('Fri Aug 8') + vtRow('Sat Aug 9') + vtRow('Sun Aug 10') +
+        '<div class="vote-submit"><span class="vt-submit-btn">Submit</span></div>' +
+      '</div>' +
+    '</section>';
+
   // scene 3 — responses (same plan; the answer reveals itself)
   const sceneAnswer =
     '<section class="scene scene-lead" data-scene="answer">' +
@@ -1032,7 +1082,7 @@ function renderLanding(){
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="walk">' + sceneCreate + sceneShare + sceneAnswer + sceneTogether + '</div>'
+    '<div class="walk">' + sceneCreate + sceneShare + sceneVote + sceneAnswer + sceneTogether + '</div>'
   );
   wireHeroCard();
   wireWalk();
@@ -1210,6 +1260,31 @@ function wireWalk(){
     }
     play();
   }
+  function playVote(sec){
+    const rows = sec.querySelectorAll('.vt-row');
+    const submit = sec.querySelector('.vt-submit-btn');
+    const picks = ['free','top','no']; // Fri free, Sat top, Sun can't
+    let timers = [];
+    function reset(){
+      rows.forEach(function(r){ r.querySelectorAll('.vt-opt').forEach(function(o){ o.classList.remove('on','tap'); }); });
+      if (submit){ submit.classList.remove('press','done'); submit.textContent = 'Submit'; }
+    }
+    function play(){
+      timers.forEach(clearTimeout); timers = []; reset();
+      rows.forEach(function(r, i){
+        timers.push(setTimeout(function(){
+          const opt = r.querySelector('.vt-opt.' + picks[i]);
+          if (opt){ opt.classList.add('on', 'tap'); }
+        }, 750 + i*780));
+      });
+      const submitAt = 750 + rows.length*780 + 450;
+      timers.push(setTimeout(function(){ if (submit) submit.classList.add('press'); }, submitAt));
+      timers.push(setTimeout(function(){ if (submit){ submit.classList.remove('press'); submit.classList.add('done'); submit.textContent = 'Submitted ✓'; } }, submitAt + 320));
+      timers.push(setTimeout(function(){ if (sceneInView(sec)) play(); else waitFor(); }, submitAt + 3800));
+    }
+    function waitFor(){ timers.push(setTimeout(function(){ if (sceneInView(sec)) play(); else waitFor(); }, 1400)); }
+    play();
+  }
   function playTogether(sec){
     const ppl = sec.querySelectorAll('.fp');
     let timers = [];
@@ -1223,7 +1298,7 @@ function wireWalk(){
     function waitFor(){ timers.push(setTimeout(function(){ if (sceneInView(sec)) play(); else waitFor(); }, 1400)); }
     play();
   }
-  const runners = { create:playCreate, share:playShare, answer:playAnswer, together:playTogether };
+  const runners = { create:playCreate, share:playShare, vote:playVote, answer:playAnswer, together:playTogether };
   try {
     const io = new IntersectionObserver(function(ents){
       ents.forEach(function(e){
@@ -1640,8 +1715,7 @@ async function renderCreate(){
     '<div class="wh-q">When could it work?</div>' +
     '<div class="cal-nav"><button type="button" id="prevM">&larr;</button><strong id="calLabel"></strong><button type="button" id="nextM">&rarr;</button></div>' +
     '<div class="cal-grid" id="calGrid"></div>' +
-    '<div id="dateList" style="margin-bottom:4px;"></div>' +
-    '<p class="muted" style="font-size:12.5px;margin:2px 0 12px;">Pick a few — everyone votes and the best day rises to the top.</p>' +
+    '<div id="dateList" style="margin-bottom:12px;"></div>' +
     '<input type="text" id="timeLabel" placeholder="Add a time (e.g. 7–9 PM)" maxlength="60" />' +
     '<div class="error" id="err" style="display:none;margin-top:14px;"></div>' +
     '<button class="btn-brand" id="createBtn" style="margin-top:20px;">Create plan →</button>' +
@@ -1792,12 +1866,17 @@ function sharePreviewInner(plan){
   const right = cover
     ? '<img src="'+cover+'" alt="" /><div class="sp-scrim"></div>'
     : '<div class="sp-teal"></div>';
+  const pencil = cover
+    ? '<span class="sp-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>'
+    : '';
   return '<label class="sp">' +
     '<input type="file" accept="image/*" id="coverInp" style="display:none;">' +
     '<div class="sp-l"><div class="sp-h">Which day<br>works best?</div>' +
     '<div class="sp-name">'+escapeHtml(plan.title || 'Your plan')+'</div></div>' +
     '<div class="sp-r">'+right+'<div class="sp-lock">'+logoMarkSvg(18)+'<span>whensday</span></div></div>' +
-  '</label>';
+    pencil +
+  '</label>' +
+  '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div>';
 }
 function renderSharePreview(plan){
   const host = document.getElementById('sharePreview'); if (!host) return;
@@ -1846,8 +1925,9 @@ function renderPersonalize(plan){
     '<h2 style="margin-top:0;">One last touch</h2>' +
     '<p class="subtitle">Give it a little personality before you send it out.</p>' +
     '<div class="wh-q" style="margin-top:10px;">Add a cover photo</div>' +
-    '<div id="sharePreview"></div>' +
-    '<p class="muted" id="coverCap" style="font-size:13px;margin:10px 0 0;">Tap the preview to add a cover — it’s what people see when you share.</p>' +
+    '<p class="muted" style="font-size:13px;margin:-6px 0 12px;">Here’s how your link lands in the group chat.</p>' +
+    '<div id="sharePreview" class="sp-msg"></div>' +
+    '<p class="muted" id="coverCap" style="font-size:13px;margin:10px 0 0;">Tap the preview to add a cover photo.</p>' +
     (hasFriends
       ? ('<div class="wh-q">Put faces to names</div>' +
          '<p class="muted" style="font-size:13px;margin:-6px 0 14px;">Add photos so people tap their own face to vote instead of typing a name.</p>' +
