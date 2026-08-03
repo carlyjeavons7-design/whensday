@@ -1,4 +1,8 @@
-# Per-plan link previews: rewrite og tags for /?plan=<slug> requests.
+# Per-plan link previews.
 [[edge_functions]]
 path = "/"
 function = "preview"
+
+[[edge_functions]]
+path = "/og"
+function = "og"
