@@ -16,7 +16,7 @@ const img = (src, w, h, style) => ({ type: "img", props: { src, width: w, height
 function card(title, rightChildren){
   const leftKids = [
     e("div", { display:"flex", flexDirection:"column", flexGrow:1, justifyContent:"center" }, [
-      e("div", { fontSize:90, fontWeight:700, color:"#2C2519", lineHeight:1.0, letterSpacing:-3 }, "What day"),
+      e("div", { fontSize:90, fontWeight:700, color:"#2C2519", lineHeight:1.0, letterSpacing:-3 }, "Which day"),
       e("div", { fontSize:90, fontWeight:700, color:"#2C2519", lineHeight:1.0, letterSpacing:-3 }, "works best?"),
     ]),
   ];
