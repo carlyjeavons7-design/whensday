@@ -437,7 +437,8 @@
   .b-flash.show.pref{animation:glowPref 1.4s ease-out;}
   @keyframes glowNo{0%,100%{box-shadow:0 0 0 0 rgba(192,82,79,0);}35%{box-shadow:0 0 18px 3px rgba(192,82,79,.55);}}
   @keyframes glowPref{0%,100%{box-shadow:0 0 0 0 rgba(126,156,127,0);}35%{box-shadow:0 0 18px 3px rgba(126,156,127,.6);}}
-  .site-foot{display:flex;align-items:center;justify-content:center;gap:9px;padding:26px 16px 30px;font-size:12.5px;color:var(--muted2);position:relative;z-index:5;}
+  .site-foot{display:flex;align-items:center;justify-content:center;gap:9px;padding:26px 16px 30px;font-size:12.5px;color:var(--muted2);position:relative;z-index:5;opacity:0;transition:opacity .45s ease;}
+  body.booted .site-foot{opacity:1;}
   .site-foot a{color:var(--muted1);text-decoration:none;font-weight:500;}
   .site-foot a:hover{color:var(--accent);}
   .site-foot span{color:var(--muted3);}
@@ -928,7 +929,7 @@ async function renderMyEvents(){
     const p = it.p;
     if (p.decided_date) return (it.state === 'past' ? 'Was ' : '') + fmtDateShort(p.decided_date);
     if (it.state === 'draft') return 'Not shared yet';
-    if (it.state === 'inprogress') return 'Shared · waiting for replies';
+    if (it.state === 'inprogress') return 'Waiting for replies';
     return it.respCount + ' ' + (it.respCount === 1 ? 'person' : 'people') + ' in so far';
   }
   function chipFor(it){
@@ -2722,7 +2723,7 @@ function renderResults(plan, opts){
   function facesFromIds(ids, prefIds){
     const fs = ids.map(id => plan.friends.find(f => f.id === id)).filter(Boolean);
     if (!fs.length) return '<span class="muted" style="font-size:12.5px;">No one yet</span>';
-    return clusterFaces(fs, 30, { prefIds: prefIds });
+    return clusterFaces(fs, 30, { prefIds: prefIds, perRow: 8 });
   }
   function dayListHtml(){
     if (!plan.knownDates.length) return '';
@@ -3628,9 +3629,11 @@ window.addEventListener('popstate', function(){ route(); });
 var __bootStart = Date.now();
 function bootDone(){
   var el = document.getElementById('boot');
-  if (!el) return;
   var wait = Math.max(0, 700 - (Date.now() - __bootStart));
   setTimeout(function(){
+    // reveal the footer only once the loading screen is on its way out
+    document.body.classList.add('booted');
+    if (!el) return;
     el.classList.add('hide');
     setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 600);
   }, wait);
