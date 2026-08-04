@@ -278,7 +278,7 @@
   .org-cover{height:154px;border-radius:18px;background-size:cover;background-position:center;margin-bottom:16px;box-shadow:0 20px 44px -30px rgba(36,30,23,.5);position:relative;}
   .org-cover .wm-mini{position:absolute;top:12px;right:14px;color:rgba(255,255,255,.95);text-shadow:0 1px 8px rgba(0,0,0,.35);}
   /* landing breaks out of the 540px app column to full width */
-  .landing{position:relative;left:50%;right:50%;width:100vw;margin-left:-50vw;margin-right:-50vw;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;}
+  .landing{position:relative;left:50%;right:50%;width:100vw;margin-left:-50vw;margin-right:-50vw;min-height:min(100vh,860px);box-sizing:border-box;display:flex;flex-direction:column;}
   .landing-inner{flex:1;display:flex;flex-direction:column;width:100%;max-width:1080px;margin:0 auto;padding:0 clamp(20px,5vw,44px);box-sizing:border-box;}
   .landing-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 0;}
   .landing-brand{display:flex;align-items:center;gap:9px;}
@@ -346,7 +346,7 @@
   .walk{display:flex;flex-direction:column;}
   .scene{box-sizing:border-box;opacity:0;transform:translateY(28px);transition:opacity 1.15s cubic-bezier(.16,1,.3,1),transform 1.15s cubic-bezier(.16,1,.3,1);}
   .scene.in{opacity:1;transform:none;}
-  .scene-lead{padding:12vh 0;}
+  .scene-lead{padding:clamp(44px,7vh,80px) 0;}
   .scene-kicker{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.01em;margin:0 0 13px;}
   .scene-h{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(27px,7.2vw,34px);letter-spacing:-.032em;line-height:1.07;color:var(--text);margin:0 0 15px;max-width:15ch;}
   .scene-p{font-size:16.5px;line-height:1.5;color:var(--muted1);max-width:29ch;margin:0;}
@@ -465,7 +465,7 @@
   .b-confirm-note{font-size:12.5px;color:var(--muted2);font-weight:500;margin:11px 0 0;opacity:0;transition:opacity .6s ease;}
   .b-confirm.done .b-confirm-note{opacity:1;}
   /* scene 4 — together (payoff) */
-  .scene-final{padding:12vh 0;text-align:center;}
+  .scene-final{padding:clamp(44px,7vh,80px) 0;text-align:center;}
   .final-eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin:0 0 16px;}
   .final-date{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(32px,9vw,44px);letter-spacing:-.038em;line-height:1.02;color:var(--text);margin:0;}
   .final-people{display:flex;flex-direction:column;gap:12px;max-width:238px;margin:40px auto 0;}
@@ -482,6 +482,8 @@
   .fin-reveal.show{opacity:1;transform:none;}
   .final-cta{display:inline-block;background:var(--accent);color:#FBF7EE;font-weight:700;font-size:16px;padding:14px 32px;border-radius:14px;text-decoration:none;transition:background .3s,transform .4s cubic-bezier(.16,1,.3,1);}
   .final-cta.fin-reveal{transition:opacity .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1),background .3s;}
+  .final-cta.tap{animation:ctaTap .56s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes ctaTap{0%{transform:none;background:var(--accent);}28%{transform:scale(.93);background:var(--accent-dark);}62%{transform:scale(1.03);background:var(--accent-dark);}100%{transform:none;background:var(--accent);}}
   .final-cta:hover{background:var(--accent-dark);transform:translateY(-1px);}
   .cal-lead{font-size:13px;font-weight:700;color:var(--muted2);letter-spacing:.02em;margin:0 0 10px;}
   .cal-row{display:flex;gap:10px;}
@@ -1372,21 +1374,40 @@ function wireWalk(){
   }
   function playTogether(sec){
     const ppl = sec.querySelectorAll('.fp');
-    const revs = sec.querySelectorAll('.fin-reveal');
+    const eyebrow = sec.querySelector('.final-eyebrow');
+    const date = sec.querySelector('.final-date');
+    const note = sec.querySelector('.final-note');
+    const cta = sec.querySelector('.final-cta');
     let timers = [];
+    const at = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
     function play(){
       timers.forEach(clearTimeout); timers = [];
       ppl.forEach(function(p){ p.classList.remove('in'); });
-      revs.forEach(function(r){ r.classList.remove('show'); });
-      // people assemble first
-      ppl.forEach(function(p, i){ timers.push(setTimeout(function(){ p.classList.add('in'); }, 260 + i*260)); });
-      const peopleDone = 260 + ppl.length*260;
-      // then the payoff reveals: headline, date, "See you Saturday", "Create a plan"
-      revs.forEach(function(r, i){ timers.push(setTimeout(function(){ r.classList.add('show'); }, peopleDone + 300 + i*280)); });
-      const done = peopleDone + 300 + revs.length*280;
-      timers.push(setTimeout(function(){ if (sceneInView(sec)) play(); else waitFor(); }, done + 3600));
+      [eyebrow, date, note, cta].forEach(function(el){ if (el) el.classList.remove('show'); });
+      if (cta) cta.classList.remove('tap');
+      // Beat 1: "Everyone answered" + the date + the FIRST person, together
+      at(300, function(){
+        if (eyebrow) eyebrow.classList.add('show');
+        if (date) date.classList.add('show');
+        if (ppl[0]) ppl[0].classList.add('in');
+      });
+      // Beat 2: the rest of the people, one by one
+      let t = 300 + 750;
+      for (let i = 1; i < ppl.length; i++){
+        (function(idx, when){ at(when, function(){ ppl[idx].classList.add('in'); }); })(i, t);
+        t += 360;
+      }
+      // Beat 3: "See you Saturday", then the button appears and gets an animated tap
+      const noteAt = t + 350;
+      at(noteAt, function(){ if (note) note.classList.add('show'); });
+      const ctaAt = noteAt + 550;
+      at(ctaAt, function(){ if (cta) cta.classList.add('show'); });
+      const tapAt = ctaAt + 800;
+      at(tapAt, function(){ if (cta) cta.classList.add('tap'); });
+      at(tapAt + 560, function(){ if (cta) cta.classList.remove('tap'); });
+      at(tapAt + 560 + 2600, function(){ if (sceneInView(sec)) play(); else waitFor(); });
     }
-    function waitFor(){ timers.push(setTimeout(function(){ if (sceneInView(sec)) play(); else waitFor(); }, 1400)); }
+    function waitFor(){ at(1400, function(){ if (sceneInView(sec)) play(); else waitFor(); }); }
     play();
   }
   const runners = { create:playCreate, share:playShare, vote:playVote, answer:playAnswer, together:playTogether };
