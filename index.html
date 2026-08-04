@@ -384,7 +384,10 @@
   .bub.me{align-self:flex-end;background:var(--accent);color:#FBF7EE;border-bottom-right-radius:7px;}
   .bub.link{align-self:flex-end;background:var(--card);border:1px solid var(--line);color:var(--accent-dark);font-weight:600;display:inline-flex;align-items:center;gap:9px;box-shadow:0 18px 38px -32px rgba(36,30,23,.55);}
   .bub-mark{width:16px;height:16px;flex:0 0 auto;}
-  /* link preview card — how the shared link actually renders in a chat */
+  /* link preview — the actual generated banner, as it renders in a chat */
+  .bub.bub-preview{align-self:flex-end;background:transparent;padding:0;border-radius:16px;max-width:80%;box-shadow:0 20px 42px -30px rgba(36,30,23,.55);}
+  .bub.bub-preview .sp-msg{width:100%;}
+  .sp.sp-demo{cursor:default;}
   .bub.linkcard{align-self:flex-end;background:#ECE7DC;padding:11px 13px;border-radius:16px;border-bottom-right-radius:6px;display:flex;align-items:center;gap:13px;max-width:84%;}
   .lc-text{flex:1;min-width:0;}
   .lc-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14.5px;color:var(--text);line-height:1.15;}
@@ -1052,13 +1055,14 @@ function renderLanding(){
         '<div class="bub them">i can saturday</div>' +
         '<div class="bub them">i’m gone saturday but free next weekend!</div>' +
         '<div class="bub me">ok, sending a whensday 👇</div>' +
-        '<div class="bub linkcard">' +
-          '<div class="lc-text">' +
-            '<div class="lc-title">Which day works best?</div>' +
-            '<div class="lc-sub">Cabin weekend</div>' +
-            '<div class="lc-url">whensday.co</div>' +
+        '<div class="bub bub-preview">' +
+          '<div class="sp-msg">' +
+            '<div class="sp sp-demo">' +
+              '<div class="sp-l"><div class="sp-h">Which day<br>works best?</div><div class="sp-name">Cabin weekend</div></div>' +
+              '<div class="sp-r">'+cabinSceneSvg()+'<div class="sp-scrim"></div><div class="sp-lock">'+logoMarkSvg(18)+'<span>whensday</span></div></div>' +
+            '</div>' +
+            '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div>' +
           '</div>' +
-          '<div class="lc-icon">'+cabinSceneSvg()+'</div>' +
         '</div>' +
       '</div>' +
     '</section>';
@@ -1181,7 +1185,7 @@ function renderLanding(){
         '<div class="hero-grid">' +
           '<div class="hero-copy">' +
             '<h1 class="landing-h1">The easiest way to find the best day.</h1>' +
-            '<p class="landing-sub">No more back-and-forth. Share a link. Everyone shares what works. Make the plan.</p>' +
+            '<p class="landing-sub">No more back-and-forth.<br>Share a link.<br>Everyone shares what works.<br>Make the plan.</p>' +
             '<a class="landing-cta" href="'+createHref+'">Create a plan</a>' +
             '<div class="landing-trust"><span>No app, no signup to vote</span><i></i><span>Free to use</span></div>' +
           '</div>' +
