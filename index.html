@@ -780,6 +780,24 @@ function markShared(plan){
   plan.shared_at = new Date().toISOString();
   try { sb.rpc('mark_plan_shared', { p_plan_id: plan.id }).then(function(){}, function(){}); } catch(e){}
 }
+async function sharePlan(plan, btn){
+  const url = planUrl(plan);
+  if (navigator.share){
+    try {
+      await navigator.share({ title: plan.title, text: 'Which day works best? Add when you’re free:', url: url });
+      markShared(plan);
+      return;
+    } catch(e){
+      if (e && e.name === 'AbortError') return; // user closed the share sheet
+      // otherwise fall through to copy
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    markShared(plan);
+    if (btn){ const orig = btn.textContent; btn.textContent = 'Link copied!'; setTimeout(function(){ btn.textContent = orig; }, 1600); }
+  } catch(e){}
+}
 function slugify(title){
   return (title || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'plan';
 }
@@ -3361,7 +3379,7 @@ async function renderAdminPanel(plan){
     '<h2 style="margin-top:0;">Share this plan</h2>' +
     '<p class="subtitle">Send this link so everyone can add when they\'re free.</p>' +
     '<div class="link-box">'+planUrl(plan)+'</div>' +
-    '<button class="btn-primary" id="copyAdminLinkBtn" style="margin-top:12px;">Copy invite link</button>' +
+    '<button class="btn-primary" id="copyAdminLinkBtn" style="margin-top:12px;">'+(navigator.share ? 'Share invite link' : 'Copy invite link')+'</button>' +
     '</div>' +
     '<div class="card">' +
     '<h2 style="margin-top:0;">About this plan</h2>' +
@@ -3462,7 +3480,7 @@ async function renderAdminPanel(plan){
   wireCoverPhotoEditor(plan, draw);
   wireAttendeesEditor(plan, null);
   document.getElementById('copyAdminLinkBtn').onclick = async () => {
-    try { await navigator.clipboard.writeText(planUrl(plan)); markShared(plan); const btn = document.getElementById('copyAdminLinkBtn'); btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent='Copy shareable link',1500); } catch(e){}
+    await sharePlan(plan, document.getElementById('copyAdminLinkBtn'));
   };
   document.getElementById('deleteEventBtn').onclick = async () => {
     if (!confirm('Delete "'+plan.title+'"? This permanently removes it and everyone\'s responses. This cannot be undone.')) return;
