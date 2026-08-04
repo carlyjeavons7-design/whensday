@@ -8,7 +8,8 @@
 <style>
   :root{--bg:#F5F0E4;--card:#FFFCF5;--text:#2C2519;--muted:#6D6354;--accent:#4E7C77;--border:#E5DCCA;}
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.62;font-size:16px;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.62;font-size:16px;animation:pgIn .45s ease both;}
+  @keyframes pgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .wrap{max-width:720px;margin:0 auto;padding:40px 22px 80px;}
   .brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none;margin-bottom:30px;}
   .brand svg{width:32px;height:32px;display:block;}
