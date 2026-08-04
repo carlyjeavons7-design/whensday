@@ -734,7 +734,7 @@ function lightMetaLine(plan){
   if (plan.time_label) parts.push('<span style="display:inline-flex;align-items:center;gap:5px;">&#128337;<span>'+escapeHtml(plan.time_label)+'</span></span>');
   if (plan.location) parts.push('<span style="display:inline-flex;align-items:center;gap:5px;">&#128205;<span>'+escapeHtml(plan.location)+'</span></span>');
   if (!parts.length) return '';
-  return '<div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--muted1);font-size:13.5px;font-weight:500;margin:2px 0 18px;">' + parts.join('') + '</div>';
+  return '<div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--muted1);font-size:13.5px;font-weight:500;margin:16px 0 20px;">' + parts.join('') + '</div>';
 }
 function topSectionsHtml(plan, meId, extraBannerHtml, skipRoster){
   const cover = plan.cover_photo_url;
