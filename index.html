@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Whensday — the easiest way to find the best day</title>
+<title>Whensday</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='23' fill='%234E7C77'/%3E%3Cg transform='translate(0 4.25) scale(0.5)' fill='none' stroke='%23FBF7EE' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M39.5 41 L81 142 L101 92 L109.2 71.6'/%3E%3Cpath d='M161 45 L119 138 L101 92 L92.9 70.7'/%3E%3C/g%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="manifest" href="manifest.json" />
@@ -1122,12 +1122,16 @@ function renderLanding(){
         'Nope. They just tap your link and mark their availability right in the browser &mdash; no app to download and no account to sign up for. That’s the whole point.') +
       faqItem('How does voting work?',
         'For each day you suggested, everyone taps one of three options: <strong>Can’t make it</strong>, <strong>Free</strong>, or <strong>Top choice</strong>. Whensday adds it all up and shows which day has the most overlap, so the winner is obvious at a glance.') +
+      faqItem('Can everyone see how others voted?',
+        'Yes &mdash; Whensday is made to be shared, so anyone with the link watches the results fill in live: which days are working and who’s marked what. It’s not a secret ballot, and that’s on purpose &mdash; seeing where everyone overlaps is the whole point.') +
       faqItem('Do I need an account?',
         'Only the person creating a plan makes a quick account (just an email and password) so you can manage your plans and come back to them later. Everyone you invite votes without one.') +
       faqItem('How do I share it?',
         'Once your plan is created you get one link to send &mdash; text it, drop it in the group chat, email it, wherever. The link comes with a nice preview showing your event name and cover photo so people know exactly what they’re opening.') +
       faqItem('How is the final day picked?',
         'You see the results update live as people respond. The day with the most availability floats to the top as the best option, and you decide when to lock it in and let everyone know.') +
+      faqItem('Do I have to go with the day that rises to the top?',
+        'Not at all. The most-available day floats to the top as a suggestion, but you’re the organizer &mdash; you can confirm whichever day makes the most sense for you, even if it isn’t the #1. Whensday points you at the best overlap; the final call is always yours.') +
       faqItem('Is it free?',
         'Yes &mdash; creating plans, sharing links, and collecting responses are all free to use.') +
       '<div class="faq-cta"><a class="landing-cta" href="'+createHref+'">Create a plan</a></div>' +
@@ -1159,7 +1163,7 @@ function renderLanding(){
         '<div class="hero-grid">' +
           '<div class="hero-copy">' +
             '<h1 class="landing-h1">The easiest way to find the best day.</h1>' +
-            '<p class="landing-sub">Pick a few days, share one link, and watch everyone’s overlap appear.</p>' +
+            '<p class="landing-sub">No more back-and-forth. Share a link. Everyone shares what works. Make the plan.</p>' +
             '<a class="landing-cta" href="'+createHref+'">Create a plan</a>' +
             '<div class="landing-trust"><span>No app, no signup to vote</span><i></i><span>Free to use</span></div>' +
           '</div>' +
@@ -1830,6 +1834,7 @@ async function renderCreate(){
     '<div class="cal-grid" id="calGrid"></div>' +
     '<div id="dateList" style="margin-bottom:12px;"></div>' +
     '<input type="text" id="timeLabel" placeholder="Add a time (e.g. 7–9 PM)" maxlength="60" />' +
+    '<p class="muted" style="font-size:13px;margin:8px 0 0;">Not sure yet? A rough guess is totally fine — even “evening” or “afternoon.” You can always change it later.</p>' +
     '<div class="error" id="err" style="display:none;margin-top:14px;"></div>' +
     '<button class="btn-brand" id="createBtn" style="margin-top:20px;">Create plan →</button>' +
     '</div>'
