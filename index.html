@@ -255,6 +255,7 @@
   .plan-chip.live{background:var(--brand-soft);color:var(--accent-dark);}
   .plan-chip.draft{background:#EDE4D3;color:var(--muted1);}
   .plan-chip.prog{background:#DCE7F0;color:#47688A;}
+  .plan-chip.canceled{background:rgba(192,82,79,.13);color:var(--no);}
   .plan-chip.set{background:rgba(126,156,127,.22);color:var(--pref-ink);}
   .plan-chip.past{background:#ECE4D4;color:var(--muted2);}
   .plan-card.faded{opacity:.72;}
@@ -517,6 +518,22 @@
   #boot.hide .boot-fill{width:100%;transition:width .28s ease;animation:none;}
   @keyframes bootIn{to{opacity:1;}}
   @keyframes bootFill{0%{width:0;}55%{width:70%;}100%{width:90%;}}
+  /* canceled plan page */
+  .cx-wrap{padding-top:8px;}
+  .cx-hero{position:relative;height:172px;border-radius:20px;overflow:hidden;margin-bottom:24px;box-shadow:0 20px 44px -30px rgba(36,30,23,.5);}
+  .cx-img{position:absolute;inset:0;background-size:cover;background-position:center;filter:grayscale(.85) brightness(.8);}
+  .cx-teal{position:absolute;inset:0;background:linear-gradient(150deg,#7a7060,#514637);}
+  .cx-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(20,14,6,.58),rgba(20,14,6,.12));}
+  .cx-wm{position:absolute;top:14px;right:16px;display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.95);text-shadow:0 1px 8px rgba(0,0,0,.35);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;}
+  .cx-wm svg{width:18px;height:18px;}
+  .cx-stamp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);border:3px solid rgba(255,255,255,.92);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:800;letter-spacing:.09em;text-transform:uppercase;font-size:19px;padding:7px 17px;border-radius:11px;text-shadow:0 1px 6px rgba(0,0,0,.45);box-shadow:0 2px 16px rgba(0,0,0,.28);animation:cxStamp .5s cubic-bezier(.34,1.56,.64,1) .35s both;}
+  .cx-title{font-size:15.5px;font-weight:600;color:var(--muted1);text-decoration:line-through;text-decoration-color:var(--muted3);margin:0 0 14px;}
+  .cx-h{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,8vw,38px);font-weight:700;letter-spacing:-.035em;line-height:1.02;color:var(--text);margin:0 0 12px;}
+  .cx-sub{color:var(--muted1);font-size:16px;line-height:1.52;max-width:340px;margin:0 auto 28px;}
+  .cxIn{animation:cxIn .7s cubic-bezier(.16,1,.3,1) both;}
+  .cx-body.cxIn{animation-delay:.12s;}
+  @keyframes cxIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  @keyframes cxStamp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-8deg) scale(1.5);}100%{opacity:1;transform:translate(-50%,-50%) rotate(-8deg) scale(1);}}
 </style>
 </head>
 <body>
@@ -942,11 +959,12 @@ async function renderMyEvents(){
   const responders = {};
   respRows.forEach(r => { (responders[r.plan_id] = responders[r.plan_id] || new Set()).add(r.friend_id); });
   const todayIso = new Date().toISOString().slice(0,10);
-  const groups = { upcoming: [], draft: [], past: [] };
+  const groups = { upcoming: [], draft: [], past: [], canceled: [] };
   plans.forEach(p => {
     const respCount = responders[p.id] ? responders[p.id].size : 0;
     let state, section;
-    if (p.decided_date){
+    if (p.canceled_at){ state = 'canceled'; section = 'canceled'; }
+    else if (p.decided_date){
       if (p.decided_date >= todayIso){ state = 'set'; section = 'upcoming'; }
       else { state = 'past'; section = 'past'; }
     }
@@ -957,12 +975,14 @@ async function renderMyEvents(){
   });
   function metaFor(it){
     const p = it.p;
+    if (it.state === 'canceled') return 'Canceled';
     if (p.decided_date) return (it.state === 'past' ? 'Was ' : '') + fmtDateShort(p.decided_date);
     if (it.state === 'draft') return 'Not shared yet';
     if (it.state === 'inprogress') return 'Waiting for replies';
     return it.respCount + ' ' + (it.respCount === 1 ? 'person' : 'people') + ' in so far';
   }
   function chipFor(it){
+    if (it.state === 'canceled') return '<span class="plan-chip canceled">Canceled</span>';
     if (it.state === 'past') return '<span class="plan-chip past">Wrapped</span>';
     if (it.state === 'set') return '<span class="plan-chip set">Set</span>';
     if (it.state === 'draft') return '<span class="plan-chip draft">Draft</span>';
@@ -975,7 +995,7 @@ async function renderMyEvents(){
       ? '<div class="plan-cover" style="background-image:linear-gradient(to top,rgba(24,16,6,.32),rgba(24,16,6,0) 62%),url(\''+p.cover_photo_url+'\');"></div>'
       : '<div class="plan-cover noimg">'+logoMarkSvg(30)+'</div>';
     const loc = p.location ? '<span>'+escapeHtml(p.location)+'</span> · ' : '';
-    return '<a class="plan-card'+(it.state === 'past' ? ' faded' : '')+'" href="?plan='+p.id+'&admin=1">' +
+    return '<a class="plan-card'+((it.state === 'past' || it.state === 'canceled') ? ' faded' : '')+'" href="?plan='+p.id+'&admin=1">' +
       cover +
       '<div class="plan-cardbody"><div class="plan-title">'+escapeHtml(p.title)+'</div>' +
       '<div class="plan-meta">'+loc+metaFor(it)+'</div></div>' +
@@ -998,6 +1018,7 @@ async function renderMyEvents(){
     sectionFor('Upcoming', 'upcoming') +
     sectionFor('Drafts', 'draft') +
     sectionFor('Past', 'past') +
+    sectionFor('Canceled', 'canceled') +
     accountRowHtml()
   );
   wireAccountRow();
@@ -1490,6 +1511,7 @@ async function route(){
     return;
   }
   if (admin){ renderAdminGate(plan); return; }
+  if (plan.canceled_at){ renderCanceled(plan); return; }
   if (plan.decided_date){ renderDecided(plan); return; }
   const me = getMe(planId);
   if (!me){
@@ -1520,6 +1542,27 @@ function showNewDaysPromptModal(plan, me, newDates){
   document.getElementById('newDaysPromptLater').onclick = () => { overlay.remove(); };
 }
 
+function renderCanceled(plan){
+  const head = 'This plan was canceled.';
+  const cover = plan.cover_photo_url;
+  const createHref = window.location.pathname + '?new=1';
+  const heroInner =
+    (cover ? '<div class="cx-img" style="background-image:url(\''+cover+'\');"></div>' : '<div class="cx-teal"></div>') +
+    '<div class="cx-scrim"></div>' +
+    '<div class="cx-stamp">Canceled</div>' +
+    '<div class="cx-wm">'+logoMarkSvg(18)+'<span>whensday</span></div>';
+  render(
+    '<div class="cx-wrap">' +
+      '<div class="cx-hero cxIn">'+heroInner+'</div>' +
+      '<div class="cx-body cxIn" style="text-align:center;">' +
+        '<div class="cx-title">'+escapeHtml(plan.title || 'This plan')+'</div>' +
+        '<h1 class="cx-h">'+head+'</h1>' +
+        '<a class="final-cta" href="'+createHref+'" style="margin-top:8px;">Start your own plan →</a>' +
+        '<div style="margin-top:18px;"><a class="top-link" href="'+window.location.pathname+'?welcome=1">Back to Whensday</a></div>' +
+      '</div>' +
+    '</div>'
+  );
+}
 function renderDecided(plan){
   const dd = new Date(plan.decided_date+'T00:00:00');
   const big = dd.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
@@ -3476,6 +3519,14 @@ async function renderAdminPanel(plan){
     '<div id="activityLogWrap" style="display:none;margin-top:14px;">' + activityLogHtml(activityLog) + '</div>' +
     '</div>' +
     '<div class="card advanced">' +
+    '<h2 style="margin-top:0;">'+(plan.canceled_at ? 'This plan is canceled' : 'Cancel plan')+'</h2>' +
+    (plan.canceled_at
+      ? '<p class="subtitle" style="margin-bottom:12px;">Anyone who opens the link sees a friendly canceled notice. Bring it back anytime — nothing was deleted.</p>' +
+        '<button class="btn-secondary" id="uncancelBtn">Reinstate this plan</button>'
+      : '<p class="subtitle" style="margin-bottom:12px;">Call it off without deleting it. The link keeps working and shows everyone a friendly canceled page; responses stay saved and you can reinstate it later.</p>' +
+        '<button class="btn-secondary" id="cancelPlanBtn" style="color:var(--no);border-color:var(--no);">Cancel this plan</button>') +
+    '</div>' +
+    '<div class="card advanced">' +
     '<h2 style="margin-top:0;">Delete plan</h2>' +
     '<p class="subtitle" style="margin-bottom:12px;">Permanently delete this plan and everyone\'s responses. This cannot be undone.</p>' +
     '<button class="btn-secondary" id="deleteEventBtn" style="color:var(--no);border-color:var(--no);">Delete this plan</button>' +
@@ -3494,6 +3545,25 @@ async function renderAdminPanel(plan){
   wireAttendeesEditor(plan, null);
   document.getElementById('copyAdminLinkBtn').onclick = async () => {
     await sharePlan(plan, document.getElementById('copyAdminLinkBtn'));
+  };
+  var cancelPlanBtn = document.getElementById('cancelPlanBtn');
+  if (cancelPlanBtn) cancelPlanBtn.onclick = async () => {
+    if (!confirm('Cancel "'+plan.title+'"? Anyone with the link will see a canceled notice. Nothing is deleted — you can reinstate it later.')) return;
+    cancelPlanBtn.disabled = true; cancelPlanBtn.textContent = 'Canceling...';
+    const { error } = await sb.rpc('org_cancel_plan', { p_plan_id: plan.id, p_passcode: getPass(plan.id) });
+    if (error){ showToast('Could not cancel. Try again.'); cancelPlanBtn.disabled = false; cancelPlanBtn.textContent = 'Cancel this plan'; return; }
+    plan.canceled_at = new Date().toISOString();
+    showToast('Plan canceled.');
+    renderAdminPanel(plan);
+  };
+  var uncancelBtn = document.getElementById('uncancelBtn');
+  if (uncancelBtn) uncancelBtn.onclick = async () => {
+    uncancelBtn.disabled = true; uncancelBtn.textContent = 'Reinstating...';
+    const { error } = await sb.rpc('org_uncancel_plan', { p_plan_id: plan.id, p_passcode: getPass(plan.id) });
+    if (error){ showToast('Could not reinstate. Try again.'); uncancelBtn.disabled = false; uncancelBtn.textContent = 'Reinstate this plan'; return; }
+    plan.canceled_at = null;
+    showToast('Plan reinstated.');
+    renderAdminPanel(plan);
   };
   document.getElementById('deleteEventBtn').onclick = async () => {
     if (!confirm('Delete "'+plan.title+'"? This permanently removes it and everyone\'s responses. This cannot be undone.')) return;
