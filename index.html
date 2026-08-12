@@ -537,6 +537,14 @@
   .cx-body.cxIn{animation-delay:.12s;}
   @keyframes cxIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
   @keyframes cxStamp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-8deg) scale(1.5);}100%{opacity:1;transform:translate(-50%,-50%) rotate(-8deg) scale(1);}}
+  /* account recovery */
+  .notice{background:rgba(126,156,127,.14);border:1px solid rgba(126,156,127,.42);color:#3f5f43;border-radius:12px;padding:11px 13px;font-size:14px;margin:2px 0 14px;line-height:1.45;}
+  .otp-boxes{display:flex;gap:7px;justify-content:center;margin:10px 0 4px;}
+  .otp-box{width:42px;height:52px;text-align:center;font-size:23px;font-weight:700;font-family:'Space Grotesk',sans-serif;border:1.5px solid var(--border);border-radius:12px;background:#FDFCFA;color:var(--text);padding:0;}
+  .otp-box:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(78,124,119,.16);}
+  .otp-boxes.shake{animation:otpShake .42s cubic-bezier(.36,.07,.19,.97);}
+  @keyframes otpShake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-7px);}40%,80%{transform:translateX(7px);}}
+  @media(max-width:360px){.otp-box{width:38px;height:48px;font-size:21px;}.otp-boxes{gap:6px;}}
 </style>
 </head>
 <body>
@@ -547,6 +555,9 @@
 const SUPABASE_URL = "https://gqorpmgvqncfutejvdlj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxb3JwbWd2cW5jZnV0ZWp2ZGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDc2MzQsImV4cCI6MjEwMTE4MzYzNH0.8nDlGULePDCaR9IRms7bwAf5gFGz-wXDCvqNyBRfdos";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Detect a password-recovery return synchronously, before supabase-js processes and strips the URL hash.
+let recoveryMode = false;
+try { if ((window.location.hash || '').indexOf('type=recovery') !== -1) recoveryMode = true; } catch(e){}
 // ---- accounts: organizers sign in; attendees never do ----
 let currentUser = null;
 async function refreshUser(){
@@ -554,7 +565,10 @@ async function refreshUser(){
   catch(e){ currentUser = null; }
   return currentUser;
 }
-try { sb.auth.onAuthStateChange(function(_e, session){ currentUser = session ? session.user : null; }); } catch(e){}
+try { sb.auth.onAuthStateChange(function(evt, session){
+  currentUser = session ? session.user : null;
+  if (evt === 'PASSWORD_RECOVERY'){ recoveryMode = true; renderNewPassword(); }
+}); } catch(e){}
 async function signOutAndHome(){ try { await sb.auth.signOut(); } catch(e){} currentUser = null; try { history.pushState({}, '', location.pathname); } catch(_){} route(); }
 
 // login / signup screen for organizers. opts: {mode:'login'|'signup', heading, blurb, next}
@@ -581,11 +595,13 @@ function renderAuth(opts){
       '<input type="password" id="authPass" placeholder="'+(isLogin ? 'Your password' : 'At least 6 characters')+'" autocomplete="'+(isLogin ? 'current-password' : 'new-password')+'" />' +
       '<div class="error" id="authErr" style="display:none;"></div>' +
       '<button class="btn-brand" id="authBtn">'+(isLogin ? 'Log in' : 'Create account')+'</button>' +
+      (isLogin ? '<button class="btn-secondary" id="otpBtn" style="margin-top:10px;">Email me a login code</button>' : '') +
       (isLogin ? '' : '<p class="auth-agree">By creating an account, you agree to our <a href="/terms.html" target="_blank" rel="noopener">Terms</a> &amp; <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>') +
       '<p class="muted" style="text-align:center;margin:16px 0 0;font-size:14px;">' +
         (isLogin ? 'New here? ' : 'Already have an account? ') +
         '<a href="#" id="authSwap" style="color:var(--accent);font-weight:700;">'+(isLogin ? 'Create an account' : 'Log in')+'</a>' +
       '</p>' +
+      (isLogin ? '<p style="text-align:center;margin:10px 0 0;font-size:13.5px;"><a href="#" id="forgotLink" style="color:var(--muted1);">Forgot your password?</a></p>' : '') +
       '</div>'
     );
     document.getElementById('authHome').onclick = function(e){ goHome(e); };
@@ -624,8 +640,209 @@ function renderAuth(opts){
     }
     btn.onclick = submit;
     passEl.onkeydown = function(e){ if (e.key === 'Enter') submit(); };
+    const otpBtn = document.getElementById('otpBtn');
+    if (otpBtn) otpBtn.onclick = function(){ renderOtpRequest(emailEl.value.trim()); };
+    const forgotLink = document.getElementById('forgotLink');
+    if (forgotLink) forgotLink.onclick = function(e){ e.preventDefault(); renderForgotPassword(emailEl.value.trim()); };
   }
   paint();
+}
+
+// ---- account recovery: shared shell + screens ----
+function authShell(inner){
+  return '<a class="top-link" href="#" id="authHome">&larr; Home</a>' +
+    '<div class="brandHome" style="display:flex;align-items:center;gap:9px;margin:14px 0 18px;">' +
+    logoMarkSvg(32) + wordmarkHtml(22,'#2C2519','#2C2519') + '</div>' +
+    '<div class="card">' + inner + '</div>';
+}
+function renderForgotPassword(prefill){
+  render(authShell(
+    '<h2 style="margin-top:0;">Reset your password</h2>' +
+    '<p class="subtitle">Enter your email and we’ll send a link to set a new one.</p>' +
+    '<label for="fpEmail">Email</label>' +
+    '<input type="email" id="fpEmail" placeholder="you@email.com" autocomplete="email" value="'+(prefill?escapeHtml(prefill):'')+'" />' +
+    '<div class="error" id="fpErr" style="display:none;"></div>' +
+    '<div class="notice" id="fpOk" style="display:none;"></div>' +
+    '<button class="btn-brand" id="fpBtn">Send reset link</button>' +
+    '<p class="muted" style="text-align:center;margin:16px 0 0;font-size:14px;">Prefer a code? <a href="#" id="fpOtp" style="color:var(--accent);font-weight:700;">Email me a code instead</a></p>' +
+    '<p class="muted" style="text-align:center;margin:9px 0 0;font-size:13.5px;"><a href="#" id="fpBack" style="color:var(--muted1);">Back to log in</a></p>'
+  ));
+  document.getElementById('authHome').onclick = goHome;
+  document.getElementById('fpBack').onclick = function(e){ e.preventDefault(); renderAuth({ mode:'login' }); };
+  document.getElementById('fpOtp').onclick = function(e){ e.preventDefault(); renderOtpRequest(document.getElementById('fpEmail').value.trim()); };
+  const btn = document.getElementById('fpBtn'), emailEl = document.getElementById('fpEmail');
+  async function go(){
+    const email = emailEl.value.trim();
+    const err = document.getElementById('fpErr'), ok = document.getElementById('fpOk');
+    err.style.display='none'; ok.style.display='none';
+    if (!email){ err.textContent='Enter your email.'; err.style.display='block'; return; }
+    btn.disabled=true; btn.textContent='Sending...';
+    try {
+      const res = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+      if (res && res.error && /rate|too many|seconds/i.test(res.error.message||'')){
+        err.textContent='Too many attempts. Wait a minute and try again.'; err.style.display='block';
+        btn.disabled=false; btn.textContent='Send reset link'; return;
+      }
+    } catch(e){}
+    ok.textContent='If an account exists for that email, a reset link is on its way. Check your inbox (and spam).';
+    ok.style.display='block';
+    btn.disabled=false; btn.textContent='Send reset link';
+  }
+  btn.onclick=go; emailEl.onkeydown=function(e){ if(e.key==='Enter') go(); };
+}
+function renderOtpRequest(prefill){
+  render(authShell(
+    '<h2 style="margin-top:0;">Log in with a code</h2>' +
+    '<p class="subtitle">We’ll email you a 6-digit code — no password needed.</p>' +
+    '<label for="otpEmail">Email</label>' +
+    '<input type="email" id="otpEmail" placeholder="you@email.com" autocomplete="email" value="'+(prefill?escapeHtml(prefill):'')+'" />' +
+    '<div class="error" id="otpErr" style="display:none;"></div>' +
+    '<button class="btn-brand" id="otpReqBtn">Email me a code</button>' +
+    '<p class="muted" style="text-align:center;margin:16px 0 0;font-size:14px;"><a href="#" id="otpToPass" style="color:var(--accent);font-weight:700;">Use a password instead</a></p>' +
+    '<p class="muted" style="text-align:center;margin:9px 0 0;font-size:13.5px;"><a href="#" id="otpToForgot" style="color:var(--muted1);">Forgot your password?</a></p>'
+  ));
+  document.getElementById('authHome').onclick = goHome;
+  document.getElementById('otpToPass').onclick = function(e){ e.preventDefault(); renderAuth({ mode:'login' }); };
+  document.getElementById('otpToForgot').onclick = function(e){ e.preventDefault(); renderForgotPassword(document.getElementById('otpEmail').value.trim()); };
+  const btn = document.getElementById('otpReqBtn'), emailEl = document.getElementById('otpEmail');
+  async function go(){
+    const email = emailEl.value.trim();
+    const err = document.getElementById('otpErr'); err.style.display='none';
+    if (!email){ err.textContent='Enter your email.'; err.style.display='block'; return; }
+    btn.disabled=true; btn.textContent='Sending...';
+    try {
+      const res = await sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
+      if (res && res.error && /rate|too many|seconds/i.test(res.error.message||'')){
+        err.textContent='Too many attempts. Wait a minute and try again.'; err.style.display='block';
+        btn.disabled=false; btn.textContent='Email me a code'; return;
+      }
+    } catch(e){}
+    // Always advance to code entry — never reveal whether an account exists.
+    renderOtpVerify(email);
+  }
+  btn.onclick=go; emailEl.onkeydown=function(e){ if(e.key==='Enter') go(); };
+}
+function renderOtpVerify(email){
+  let cells = '';
+  for (let i=0;i<6;i++) cells += '<input class="otp-box" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="'+(i===0?'one-time-code':'off')+'" aria-label="Digit '+(i+1)+'" />';
+  render(authShell(
+    '<h2 style="margin-top:0;">Enter your code</h2>' +
+    '<p class="subtitle">We sent a 6-digit code to <strong>'+escapeHtml(email)+'</strong>. It expires shortly.</p>' +
+    '<div class="otp-boxes" id="otpBoxes">'+cells+'</div>' +
+    '<div class="error" id="otpvErr" style="display:none;text-align:center;"></div>' +
+    '<p class="muted" style="text-align:center;margin:14px 0 0;font-size:14px;">Didn’t get it? <a href="#" id="otpResend" style="color:var(--accent);font-weight:700;">Resend code</a></p>' +
+    '<p class="muted" style="text-align:center;margin:9px 0 0;font-size:13.5px;"><a href="#" id="otpChange" style="color:var(--muted1);">Use a different email</a></p>'
+  ));
+  document.getElementById('authHome').onclick = goHome;
+  document.getElementById('otpChange').onclick = function(e){ e.preventDefault(); renderOtpRequest(email); };
+  document.getElementById('otpResend').onclick = async function(e){
+    e.preventDefault();
+    try { await sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } }); } catch(_){}
+    const err = document.getElementById('otpvErr'); err.style.color='var(--muted1)'; err.textContent='New code sent.'; err.style.display='block';
+  };
+  const boxes = Array.prototype.slice.call(document.querySelectorAll('#otpBoxes .otp-box'));
+  const codeStr = function(){ return boxes.map(function(b){ return b.value; }).join(''); };
+  let verifying = false;
+  async function verify(){
+    if (verifying) return;
+    const token = codeStr(); if (token.length !== 6) return;
+    verifying = true;
+    const err = document.getElementById('otpvErr'); err.style.display='none';
+    try {
+      const res = await sb.auth.verifyOtp({ email: email, token: token, type: 'email' });
+      if (res && res.error) throw res.error;
+      await refreshUser();
+      renderOtpWelcome();
+      return;
+    } catch(e){
+      const bx = document.getElementById('otpBoxes');
+      bx.classList.add('shake'); setTimeout(function(){ bx.classList.remove('shake'); }, 420);
+      boxes.forEach(function(b){ b.value=''; }); boxes[0].focus();
+      err.style.color='var(--no)'; err.textContent='That code didn’t work. Try again, or resend a new one.'; err.style.display='block';
+      verifying = false;
+    }
+  }
+  boxes.forEach(function(box, i){
+    box.addEventListener('input', function(){
+      box.value = (box.value || '').replace(/\D/g,'').slice(0,1);
+      if (box.value && i < 5) boxes[i+1].focus();
+      if (codeStr().length === 6) verify();
+    });
+    box.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !box.value && i > 0){ boxes[i-1].focus(); boxes[i-1].value=''; e.preventDefault(); }
+    });
+    box.addEventListener('paste', function(e){
+      e.preventDefault();
+      const t = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g,'').slice(0,6);
+      if (!t) return;
+      for (let j=0;j<6;j++) boxes[j].value = t[j] || '';
+      boxes[Math.min(t.length,5)].focus();
+      if (t.length === 6) verify();
+    });
+  });
+  boxes[0].focus();
+}
+function renderOtpWelcome(){
+  render(authShell(
+    '<div style="text-align:center;padding:4px 0 0;">'+logoMarkSvg(42)+'</div>' +
+    '<h2 style="text-align:center;margin:12px 0 6px;">You’re in.</h2>' +
+    '<p class="subtitle" style="text-align:center;">Set a password so you can log in without a code next time — totally optional.</p>' +
+    '<label for="spNew">New password</label>' +
+    '<input type="password" id="spNew" placeholder="At least 6 characters" autocomplete="new-password" />' +
+    '<div class="error" id="spErr" style="display:none;"></div>' +
+    '<button class="btn-brand" id="spSave">Save password</button>' +
+    '<p class="muted" style="text-align:center;margin:12px 0 0;font-size:14px;"><a href="#" id="spSkip" style="color:var(--muted1);">Skip for now</a></p>'
+  ));
+  document.getElementById('authHome').onclick = goHome;
+  document.getElementById('spSkip').onclick = function(e){ e.preventDefault(); route(); };
+  const btn = document.getElementById('spSave'), passEl = document.getElementById('spNew');
+  async function save(){
+    const pass = passEl.value;
+    const err = document.getElementById('spErr'); err.style.display='none';
+    if (!pass || pass.length < 6){ err.textContent='Password must be at least 6 characters.'; err.style.display='block'; return; }
+    btn.disabled=true; btn.textContent='Saving...';
+    try {
+      const res = await sb.auth.updateUser({ password: pass });
+      if (res && res.error) throw res.error;
+    } catch(e){
+      err.textContent = (e && e.message) || 'Could not save. Try again.'; err.style.display='block';
+      btn.disabled=false; btn.textContent='Save password'; return;
+    }
+    showToast('Password saved.');
+    route();
+  }
+  btn.onclick=save; passEl.onkeydown=function(e){ if(e.key==='Enter') save(); };
+}
+function renderNewPassword(){
+  render(authShell(
+    '<h2 style="margin-top:0;">Set a new password</h2>' +
+    '<p class="subtitle">Choose a new password for your account.</p>' +
+    '<label for="npNew">New password</label>' +
+    '<input type="password" id="npNew" placeholder="At least 6 characters" autocomplete="new-password" />' +
+    '<div class="error" id="npErr" style="display:none;"></div>' +
+    '<button class="btn-brand" id="npSave">Update password</button>'
+  ));
+  document.getElementById('authHome').onclick = goHome;
+  const btn = document.getElementById('npSave'), passEl = document.getElementById('npNew');
+  async function save(){
+    const pass = passEl.value;
+    const err = document.getElementById('npErr'); err.style.display='none';
+    if (!pass || pass.length < 6){ err.textContent='Password must be at least 6 characters.'; err.style.display='block'; return; }
+    btn.disabled=true; btn.textContent='Updating...';
+    try {
+      const res = await sb.auth.updateUser({ password: pass });
+      if (res && res.error) throw res.error;
+    } catch(e){
+      err.textContent = (e && e.message) || 'Could not update. Try again.'; err.style.display='block';
+      btn.disabled=false; btn.textContent='Update password'; return;
+    }
+    recoveryMode = false;
+    try { history.replaceState(null, '', location.pathname); } catch(_){}
+    await refreshUser();
+    showToast('Password updated.');
+    route();
+  }
+  btn.onclick=save; passEl.onkeydown=function(e){ if(e.key==='Enter') save(); };
 }
 const DEFAULT_COVER = "data:image/jpeg;base64,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";
 
@@ -1494,6 +1711,7 @@ function wireWalk(){
 }
 
 async function route(){
+  if (recoveryMode){ renderNewPassword(); return; }
   const planId = planIdFromUrl();
   const admin = qs().get('admin') === '1';
   const forceNew = qs().get('new') === '1';
