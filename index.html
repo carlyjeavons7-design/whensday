@@ -2482,10 +2482,14 @@ function avatarHtml(f, size, ringColor){
   size = size || 32;
   const ring = ringColor ? ('border:2px solid '+ringColor+';') : '';
   const shadow = 'box-shadow:0 2px 6px rgba(36,30,23,0.14);';
-  if (f.photo_url){
-    return '<img src="'+f.photo_url+'" alt="'+escapeHtml(f.name)+'" style="width:'+size+'px;height:'+size+'px;border-radius:50%;object-fit:cover;flex-shrink:0;'+shadow+ring+'" />';
-  }
-  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+(f.color||avatarColor(f.name))+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:'+Math.round(size*0.4)+'px;flex-shrink:0;'+shadow+ring+'">'+initials(f.name)+'</div>';
+  const bg = f.color || avatarColor(f.name);
+  // Always a fixed-size circle showing initials; a photo (if any) covers it and is
+  // clipped to the circle. If the photo fails to load, onerror hides it and the
+  // initials show through — a broken image can never stretch or break the layout.
+  const img = f.photo_url
+    ? '<img src="'+f.photo_url+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;" />'
+    : '';
+  return '<div style="position:relative;overflow:hidden;width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:'+Math.round(size*0.4)+'px;flex-shrink:0;'+shadow+ring+'">'+initials(f.name)+img+'</div>';
 }
 // A cluster of people — imperfect, overlapping, each settling in like they've entered the room.
 function clusterFaces(friends, size, opts){
@@ -2948,6 +2952,66 @@ function renderDayPicker(plan, me){
   renderMain();
 }
 
+// Standalone "current availability" day list (expandable per-day breakdown), used on the
+// organizer Overview tab. Collapses to `limit` days with a "Show more" button.
+function availabilityListHtml(plan, opts){
+  opts = opts || {};
+  const limit = opts.limit || 5;
+  const dates = plan.knownDates || [];
+  if (!dates.length) return '<p class="muted" style="margin:0;font-size:13.5px;">No day options yet.</p>';
+  const byDate = {};
+  dates.forEach(function(d){
+    const resp = plan.dayResponses.filter(function(r){ return r.date === d; });
+    byDate[d] = {
+      free: resp.filter(function(r){ return r.state==='free'; }).map(function(r){ return r.friend_id; }),
+      pref: resp.filter(function(r){ return r.state==='preferred'; }).map(function(r){ return r.friend_id; }),
+      no: resp.filter(function(r){ return r.state==='no'; }).map(function(r){ return r.friend_id; })
+    };
+  });
+  const ordered = dates.slice().sort(function(a,b){
+    const ra=byDate[a], rb=byDate[b];
+    const ca=ra.pref.length+ra.free.length, cb=rb.pref.length+rb.free.length;
+    return (cb-ca)||(rb.pref.length-ra.pref.length)||(a<b?-1:1);
+  });
+  function rowHtml(d, hidden){
+    const r = byDate[d];
+    const canIds = r.pref.concat(r.free);
+    const dd = new Date(d+'T00:00:00');
+    const dow = dd.toLocaleDateString(undefined,{weekday:'short'});
+    const dn = dd.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    const prefTag = r.pref.length ? '<span style="display:block;font-size:11px;font-weight:700;color:var(--pref-ink);white-space:nowrap;margin-top:2px;">✦ '+r.pref.length+' top</span>' : '';
+    const countTag = canIds.length ? '<span style="font-size:12px;color:var(--muted1);white-space:nowrap;font-weight:600;">'+canIds.length+' free</span>'+prefTag : '<span style="font-size:12px;color:var(--muted2);white-space:nowrap;">No replies</span>';
+    const fs = canIds.map(function(id){ return plan.friends.find(function(f){ return f.id===id; }); }).filter(Boolean);
+    const faces = fs.length ? clusterFaces(fs, 30, {prefIds:new Set(r.pref), perRow:8}) : '<span class="muted" style="font-size:12.5px;">No one yet</span>';
+    return '<div class="avail-item'+(hidden?' avail-extra':'')+'" data-d="'+d+'"'+(hidden?' style="display:none;"':'')+'>' +
+      '<div class="avail-head">' +
+      '<div class="vr-date" style="min-width:60px;"><span class="vr-dow">'+dow+'</span><span class="vr-dnum" style="font-size:17px;">'+dn+'</span></div>' +
+      '<div style="flex:1;min-width:0;">'+faces+'</div>' +
+      '<div style="text-align:right;">'+countTag+'</div>' +
+      '<svg class="vr-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>' +
+      '</div>' +
+      '<div class="vr-detail">'+consensusBreakdownHtml(plan, d)+'</div>' +
+      '</div>';
+  }
+  const rows = ordered.map(function(d,i){ return rowHtml(d, i>=limit); }).join('');
+  const extra = ordered.length - limit;
+  const more = extra > 0
+    ? '<button class="btn-secondary" id="availShowMore" style="margin-top:14px;">Show '+extra+' more '+(extra===1?'day':'days')+'</button>'
+    : '';
+  return rows + more;
+}
+function wireAvailabilityList(){
+  document.querySelectorAll('#availList .avail-item').forEach(function(item){
+    const head = item.querySelector('.avail-head');
+    if (head && !head.__availWired){ head.__availWired = true; head.addEventListener('click', function(){ item.classList.toggle('exp'); }); }
+  });
+  const more = document.getElementById('availShowMore');
+  if (more) more.onclick = function(){
+    document.querySelectorAll('#availList .avail-item.avail-extra').forEach(function(x){ x.style.display=''; x.classList.remove('avail-extra'); });
+    more.remove();
+    wireAvailabilityList();
+  };
+}
 function renderResults(plan, opts){
   opts = opts || {};
   const totalFriends = plan.friends.length;
@@ -3660,6 +3724,11 @@ async function renderAdminPanel(plan){
     '<button class="btn-primary" id="copyAdminLinkBtn" style="margin-top:12px;">'+(navigator.share ? 'Share invite link' : 'Copy invite link')+'</button>' +
     '</div>' +
     '<div class="card">' +
+    '<h2 style="margin-top:0;">Current availability</h2>' +
+    '<p class="subtitle" style="margin-bottom:10px;">Tap a day to see who’s in. ✦ marks a top pick.</p>' +
+    '<div id="availList">'+availabilityListHtml(plan, { limit: 5 })+'</div>' +
+    '</div>' +
+    '<div class="card">' +
     '<h2 style="margin-top:0;">About this plan</h2>' +
     '<label for="editTitle">Plan name</label>' +
     '<input type="text" id="editTitle" value="'+escapeHtml(plan.title)+'" maxlength="60" />' +
@@ -3765,6 +3834,7 @@ async function renderAdminPanel(plan){
   });
   wireCoverPhotoEditor(plan, draw);
   wireAttendeesEditor(plan, null);
+  wireAvailabilityList();
   document.getElementById('copyAdminLinkBtn').onclick = async () => {
     await sharePlan(plan, document.getElementById('copyAdminLinkBtn'));
   };
