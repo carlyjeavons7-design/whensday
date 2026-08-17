@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Whensday</title>
+<title>Whensday — find the day that works for everyone</title>
+<meta name="description" content="Whensday is the easiest way to find the one day that works for a group. Pick a few days, share one link, and everyone taps when they're free — no app, no login." />
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Whensday","url":"https://whensday.co/","applicationCategory":"LifestyleApplication","operatingSystem":"Web","description":"Whensday is the easiest way to find the one day that works for a group. Pick a few days, share one link, and everyone taps when they're free.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='23' fill='%234E7C77'/%3E%3Cg transform='translate(0 4.25) scale(0.5)' fill='none' stroke='%23FBF7EE' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M39.5 41 L81 142 L101 92 L109.2 71.6'/%3E%3Cpath d='M161 45 L119 138 L101 92 L92.9 70.7'/%3E%3C/g%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="manifest" href="manifest.json" />
@@ -555,6 +557,8 @@
 const SUPABASE_URL = "https://gqorpmgvqncfutejvdlj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxb3JwbWd2cW5jZnV0ZWp2ZGxqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MDc2MzQsImV4cCI6MjEwMTE4MzYzNH0.8nDlGULePDCaR9IRms7bwAf5gFGz-wXDCvqNyBRfdos";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Keep the browser tab short; the descriptive <title> in the HTML is what search engines read.
+try { document.title = 'Whensday'; } catch(e){}
 // Detect a password-recovery return synchronously, before supabase-js processes and strips the URL hash.
 let recoveryMode = false;
 try { if ((window.location.hash || '').indexOf('type=recovery') !== -1) recoveryMode = true; } catch(e){}
