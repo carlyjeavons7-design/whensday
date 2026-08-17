@@ -547,6 +547,39 @@
   .otp-boxes.shake{animation:otpShake .42s cubic-bezier(.36,.07,.19,.97);}
   @keyframes otpShake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-7px);}40%,80%{transform:translateX(7px);}}
   @media(max-width:360px){.otp-box{width:38px;height:48px;font-size:21px;}.otp-boxes{gap:6px;}}
+  /* "see it in action" share demo */
+  .sd-overlay{position:fixed;inset:0;z-index:4000;background:rgba(26,20,12,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .25s ease;}
+  .sd-overlay.show{opacity:1;}
+  .sd-modal{background:var(--card);border-radius:24px;padding:20px 18px 20px;max-width:360px;width:100%;position:relative;box-shadow:0 40px 90px -40px rgba(0,0,0,.5);}
+  .sd-close{position:absolute;top:11px;right:13px;background:none;border:none;font-size:26px;line-height:1;color:var(--muted2);cursor:pointer;padding:0;width:28px;height:28px;}
+  .sd-cap{text-align:center;font-size:14.5px;font-weight:600;color:var(--muted1);min-height:20px;margin:4px 0 14px;transition:opacity .25s;}
+  .sd-phone{position:relative;height:412px;background:linear-gradient(180deg,#FBF7EE,#F1EADB);border-radius:22px;border:1px solid var(--border);overflow:hidden;}
+  .sd-stage{position:absolute;inset:0;padding:16px 14px;display:flex;flex-direction:column;opacity:0;transform:translateY(8px);transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);pointer-events:none;}
+  .sd-stage.on{opacity:1;transform:none;}
+  .sd-chat{justify-content:flex-end;gap:9px;}
+  .sd-bub{max-width:80%;padding:9px 13px;border-radius:16px;font-size:14px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;}
+  .sd-bub.in{opacity:1;transform:none;}
+  .sd-me{align-self:flex-end;background:var(--accent);color:#FBF7EE;border-bottom-right-radius:6px;}
+  .sd-preview{align-self:flex-end;max-width:84%;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s;}
+  .sd-preview.in{opacity:1;transform:none;}
+  .sd-preview .sp-h{font-size:13px;line-height:1.05;}.sd-preview .sp-name{font-size:9px;}.sd-preview .sp-l{padding:10px 11px;flex:1.05;}.sd-preview .sp-r{flex:.7;}
+  .sd-preview .sp-foot{padding:6px 9px;}.sd-preview .sp-foot .t{font-size:8.5px;}.sd-preview .sp-foot .u{font-size:7px;}
+  .sd-preview .sp-lock{bottom:6px;right:6px;gap:3px;}.sd-preview .sp-lock svg{width:10px;height:10px;}.sd-preview .sp-lock span{font-size:7.5px;}
+  .sd-tap{position:absolute;width:36px;height:36px;border-radius:50%;background:rgba(46,37,25,.18);right:44px;bottom:66px;opacity:0;pointer-events:none;}
+  .sd-tap.go{animation:sdTap 1s ease;}
+  @keyframes sdTap{0%{opacity:0;transform:scale(.4);}30%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.6);}}
+  .sd-vote{justify-content:center;gap:11px;}
+  .sd-vhead{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;text-align:center;color:var(--text);margin-bottom:4px;}
+  .sd-vrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;transition:box-shadow .3s;}
+  .sd-vd{font-weight:700;font-size:14px;color:var(--text);}
+  .sd-vopts{display:flex;gap:5px;}
+  .sd-vo{font-size:11px;font-weight:700;padding:5px 9px;border-radius:8px;background:#EFE8DA;color:var(--muted1);transition:transform .18s,background .3s,color .3s;}
+  .sd-vo.no.on{background:rgba(192,82,79,.16);color:var(--no);}
+  .sd-vo.free.on{background:rgba(126,156,127,.2);color:var(--pref-ink);}
+  .sd-vo.top.on{background:var(--pref);color:#fff;}
+  .sd-vo.tap{transform:scale(.86);}
+  .sd-vrow.win{box-shadow:0 0 0 2px var(--pref);}
+  .sd-replay{display:block;margin:12px auto 0;background:none;border:none;color:var(--accent);font-weight:700;font-size:13.5px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -1051,6 +1084,77 @@ async function sharePlan(plan, btn){
     if (btn){ const orig = btn.textContent; btn.textContent = 'Link copied!'; setTimeout(function(){ btn.textContent = orig; }, 1600); }
   } catch(e){}
 }
+// A little "see how it looks when you send it" walkthrough — for people nervous about sharing.
+function showShareDemo(plan){
+  const title = (plan && plan.title) ? escapeHtml(plan.title) : 'Cabin weekend';
+  const cover = plan && plan.cover_photo_url;
+  const right = cover
+    ? '<div style="position:absolute;inset:0;background:url(\''+cover+'\') center/cover;"></div><div class="sp-scrim"></div>'
+    : '<div class="sp-teal"></div>';
+  const banner =
+    '<div class="sp-msg"><div class="sp sp-demo">' +
+      '<div class="sp-l"><div class="sp-h">Which day<br>works best?</div><div class="sp-name">'+title+'</div></div>' +
+      '<div class="sp-r">'+right+'<div class="sp-lock">'+logoMarkSvg(18)+'<span>whensday</span></div></div>' +
+    '</div><div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div></div>';
+  const days = ['Fri','Sat','Sun'];
+  const voteRows = days.map(function(d){ return '<div class="sd-vrow"><span class="sd-vd">'+d+'</span><span class="sd-vopts"><span class="sd-vo no">Can’t</span><span class="sd-vo free">Free</span><span class="sd-vo top">Top</span></span></div>'; }).join('');
+  const overlay = document.createElement('div');
+  overlay.className = 'sd-overlay';
+  overlay.innerHTML =
+    '<div class="sd-modal">' +
+      '<button class="sd-close" aria-label="Close">&times;</button>' +
+      '<p class="sd-cap" id="sdCap">Paste the link into any text or group chat.</p>' +
+      '<div class="sd-phone">' +
+        '<div class="sd-stage sd-chat on" id="sdChat">' +
+          '<div class="sd-bub sd-me" id="sdMsg">sending you a whensday 👇</div>' +
+          '<div class="sd-preview" id="sdPrev">'+banner+'</div>' +
+          '<div class="sd-tap" id="sdTap"></div>' +
+        '</div>' +
+        '<div class="sd-stage sd-vote" id="sdVote">' +
+          '<div class="sd-vhead">'+title+'</div>' + voteRows +
+        '</div>' +
+      '</div>' +
+      '<button class="sd-replay" id="sdReplay" style="display:none;">Replay ↻</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function(){ overlay.classList.add('show'); });
+  let timers = [];
+  const at = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+  function close(){ timers.forEach(clearTimeout); overlay.classList.remove('show'); setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 250); }
+  overlay.querySelector('.sd-close').onclick = close;
+  overlay.onclick = function(e){ if (e.target === overlay) close(); };
+  const cap = overlay.querySelector('#sdCap');
+  const chat = overlay.querySelector('#sdChat'), vote = overlay.querySelector('#sdVote');
+  const msg = overlay.querySelector('#sdMsg'), prev = overlay.querySelector('#sdPrev'), tap = overlay.querySelector('#sdTap');
+  const vrows = Array.prototype.slice.call(overlay.querySelectorAll('.sd-vrow'));
+  const replay = overlay.querySelector('#sdReplay');
+  function setCap(t){ cap.style.opacity = 0; timers.push(setTimeout(function(){ cap.textContent = t; cap.style.opacity = 1; }, 180)); }
+  function tapVote(i, which){
+    const opt = vrows[i] && vrows[i].querySelector('.sd-vo.'+which);
+    if (!opt) return;
+    opt.classList.add('tap');
+    timers.push(setTimeout(function(){ opt.classList.remove('tap'); opt.classList.add('on'); }, 170));
+  }
+  function run(){
+    timers.forEach(clearTimeout); timers = [];
+    chat.classList.add('on'); vote.classList.remove('on');
+    msg.classList.remove('in'); prev.classList.remove('in'); tap.classList.remove('go');
+    vrows.forEach(function(r){ r.classList.remove('win'); r.querySelectorAll('.sd-vo').forEach(function(o){ o.classList.remove('on','tap'); }); });
+    replay.style.display = 'none';
+    cap.style.opacity = 1; cap.textContent = 'Paste the link into any text or group chat.';
+    at(400, function(){ msg.classList.add('in'); });
+    at(1000, function(){ prev.classList.add('in'); });
+    at(2100, function(){ setCap('They tap it — no app, no login.'); tap.classList.add('go'); });
+    at(3200, function(){ setCap('Everyone marks what works.'); chat.classList.remove('on'); vote.classList.add('on'); });
+    at(4000, function(){ tapVote(0,'free'); });
+    at(4600, function(){ tapVote(1,'top'); });
+    at(5200, function(){ tapVote(2,'no'); });
+    at(5800, function(){ vrows[1].classList.add('win'); setCap('You land on your day. 🎉'); });
+    at(6700, function(){ replay.style.display = 'block'; });
+  }
+  replay.onclick = run;
+  run();
+}
 function slugify(title){
   return (title || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'plan';
 }
@@ -1441,7 +1545,7 @@ function renderLanding(){
         '<div class="hero-grid">' +
           '<div class="hero-copy">' +
             '<h1 class="landing-h1">The easiest way to find the best day.</h1>' +
-            '<p class="landing-sub">No more back-and-forth.<br>Share a link.<br>Everyone taps what works.<br>Make the plan.</p>' +
+            '<p class="landing-sub">No more back-and-forth. Share a link. Everyone taps what works. Make the plan.</p>' +
             '<a class="landing-cta" href="'+createHref+'">Create a plan</a>' +
             '<div class="landing-trust"><span>No app, no signup to vote</span><i></i><span>Free to use</span></div>' +
           '</div>' +
@@ -3726,6 +3830,7 @@ async function renderAdminPanel(plan){
     '<p class="subtitle">Send this link so everyone can add when they\'re free.</p>' +
     '<div class="link-box">'+planUrl(plan)+'</div>' +
     '<button class="btn-primary" id="copyAdminLinkBtn" style="margin-top:12px;">'+(navigator.share ? 'Share invite link' : 'Copy invite link')+'</button>' +
+    '<p style="text-align:center;margin:12px 0 0;font-size:13.5px;"><a href="#" id="shareDemoBtn" style="color:var(--accent);font-weight:700;">See what your friends will see →</a></p>' +
     '</div>' +
     '<div class="card">' +
     '<h2 style="margin-top:0;">Current availability</h2>' +
@@ -3839,6 +3944,7 @@ async function renderAdminPanel(plan){
   wireCoverPhotoEditor(plan, draw);
   wireAttendeesEditor(plan, null);
   wireAvailabilityList();
+  { const _sd = document.getElementById('shareDemoBtn'); if (_sd) _sd.onclick = function(e){ e.preventDefault(); showShareDemo(plan); }; }
   document.getElementById('copyAdminLinkBtn').onclick = async () => {
     await sharePlan(plan, document.getElementById('copyAdminLinkBtn'));
   };
