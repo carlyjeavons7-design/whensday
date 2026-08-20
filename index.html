@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 <title>Wutday — find the day that works for everyone</title>
 <meta name="description" content="Wutday is the easiest way to find the one day that works for a group. Pick a few days, share one link, and everyone taps when they're free — no app, no login." />
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wutday","url":"https://whensday.co/","applicationCategory":"LifestyleApplication","operatingSystem":"Web","description":"Wutday is the easiest way to find the one day that works for a group. Pick a few days, share one link, and everyone taps when they're free.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wutday","url":"https://wutday.co/","applicationCategory":"LifestyleApplication","operatingSystem":"Web","description":"Wutday is the easiest way to find the one day that works for a group. Pick a few days, share one link, and everyone taps when they're free.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='23' fill='%234E7C77'/%3E%3Cg transform='translate(0 4.25) scale(0.5)' fill='none' stroke='%23FBF7EE' stroke-width='12' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M39.5 41 L81 142 L101 92 L109.2 71.6'/%3E%3Cpath d='M161 45 L119 138 L101 92 L92.9 70.7'/%3E%3C/g%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="manifest" href="manifest.json" />
@@ -13,17 +13,17 @@
 <meta property="og:site_name" content="Wutday" />
 <meta property="og:title" content="Which day works best?" />
 <meta property="og:description" content="Pick the day that works for everyone — one link, no logins. A Wutday plan." />
-<meta property="og:image" content="https://whensday.co/og-image.png?v=9" />
+<meta property="og:image" content="https://wutday.co/og-image.png?v=9" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="Wutday — the easiest way to find the best day" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://whensday.co/" />
-<link rel="canonical" href="https://whensday.co/" />
+<meta property="og:url" content="https://wutday.co/" />
+<link rel="canonical" href="https://wutday.co/" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Which day works best?" />
 <meta name="twitter:description" content="Pick the day that works for everyone — one link, no logins. A Wutday plan." />
-<meta name="twitter:image" content="https://whensday.co/og-image.png?v=9" />
+<meta name="twitter:image" content="https://wutday.co/og-image.png?v=9" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
@@ -1093,7 +1093,7 @@ function topSectionsHtml(plan, meId, extraBannerHtml, skipRoster){
   return html;
 }
 
-function myNameKey(){ return 'whensday_my_name'; }
+function myNameKey(){ return 'wutday_my_name'; }
 function getMyName(){ try { return localStorage.getItem(myNameKey()) || ''; } catch(e){ return ''; } }
 function setMyName(n){ try { if (n) localStorage.setItem(myNameKey(), n); } catch(e){} }
 function myEventsKey(){ return 'dayfinder_my_events'; }
@@ -1108,7 +1108,7 @@ function addMyEvent(plan){
 
 function qs(){ return new URLSearchParams(window.location.search); }
 function planIdFromUrl(){ return qs().get('plan'); }
-function planUrl(plan){ return 'https://whensday.co/?plan=' + (plan.slug || plan.id); }
+function planUrl(plan){ return 'https://wutday.co/?plan=' + (plan.slug || plan.id); }
 function markShared(plan){
   if (!plan || plan.shared_at) return;
   plan.shared_at = new Date().toISOString();
@@ -1147,7 +1147,7 @@ function showShareDemo(plan){
         '<div class="sp-l"><div class="sp-h">Which day<br>works best?</div><div class="sp-name">'+title+'</div></div>' +
         '<div class="sp-r">'+right+'<div class="sp-lock">'+logoMarkSvg(18)+'<span>wutday</span></div></div>' +
       '</div>' +
-      '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div>' +
+      '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">wutday.co</div></div>' +
     '</div>';
   const av = function(n){ return '<span class="sd-av" style="background:'+avatarColor(n)+'">'+n.charAt(0)+'</span>'; };
   const mav = function(n){ return '<span class="sd-mav" style="background:'+avatarColor(n)+'">'+n.charAt(0)+'</span>'; };
@@ -1510,7 +1510,7 @@ function renderLanding(){
           '<span class="pc-add">+</span>' +
         '</div>' +
         '<div class="pc-btn">Create plan</div>' +
-        '<div class="pc-link">'+linkIcon+'<span class="pc-link-url">whensday.co/cabin-weekend</span><span class="pc-link-copy">Copy</span></div>' +
+        '<div class="pc-link">'+linkIcon+'<span class="pc-link-url">wutday.co/cabin-weekend</span><span class="pc-link-copy">Copy</span></div>' +
       '</div>' +
     '</section>';
 
@@ -1532,7 +1532,7 @@ function renderLanding(){
               '<div class="sp-l"><div class="sp-h">Which day<br>works best?</div><div class="sp-name">Cabin weekend</div></div>' +
               '<div class="sp-r">'+cabinSceneSvg()+'<div class="sp-scrim"></div><div class="sp-lock">'+logoMarkSvg(18)+'<span>wutday</span></div></div>' +
             '</div>' +
-            '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div>' +
+            '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">wutday.co</div></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -2511,7 +2511,7 @@ function sharePreviewInner(plan){
     '<div class="sp-r">'+right+'<div class="sp-lock">'+logoMarkSvg(18)+'<span>wutday</span></div></div>' +
     pencil +
   '</label>' +
-  '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">whensday.co</div></div>';
+  '<div class="sp-foot"><div class="t">Which day works best?</div><div class="u">wutday.co</div></div>';
 }
 function renderSharePreview(plan){
   const host = document.getElementById('sharePreview'); if (!host) return;

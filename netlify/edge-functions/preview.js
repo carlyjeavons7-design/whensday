@@ -6,7 +6,7 @@ export default async (request, context) => {
   if (!plan) return res;
   if (!(res.headers.get("content-type") || "").includes("text/html")) return res;
 
-  const ogUrl = "https://whensday.co/og?plan=" + encodeURIComponent(plan);
+  const ogUrl = "https://wutday.co/og?plan=" + encodeURIComponent(plan);
   let html = await res.text();
   html = html
     .replace(/(<meta property="og:image" content=")[^"]*(")/, "$1" + ogUrl + "$2")
