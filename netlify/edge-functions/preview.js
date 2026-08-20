@@ -1,4 +1,4 @@
-// Whensday link preview: point og:image at the per-plan image generator (/og).
+// Wutday link preview: point og:image at the per-plan image generator (/og).
 export default async (request, context) => {
   const url = new URL(request.url);
   const plan = url.searchParams.get("plan");
