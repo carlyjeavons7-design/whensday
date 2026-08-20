@@ -107,24 +107,6 @@
   .btn-primary{background:var(--accent);color:#fff;width:100%;}
   .btn-primary:active{background:var(--accent-dark);}
   .btn-primary:disabled{background:var(--muted3);cursor:not-allowed;}
-  /* interactive hover: label slides out, "label →" slides in, ripple fills */
-  .ih-btn{position:relative;overflow:hidden;isolation:isolate;}
-  .ih-btn .ih-label{position:relative;z-index:2;display:inline-block;transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .3s ease;}
-  .ih-btn:hover .ih-label{transform:translateX(46px);opacity:0;}
-  .ih-btn::before{content:"";position:absolute;inset:0;z-index:1;background:var(--accent-dark);border-radius:50%;transform:scale(0);transform-origin:16% 50%;transition:transform .46s cubic-bezier(.22,1,.36,1),border-radius .46s ease;pointer-events:none;}
-  .ih-btn.ih-neutral::before{background:var(--accent);}
-  .ih-btn:hover::before{transform:scale(1.75);border-radius:0;}
-  .ih-btn::after{content:attr(data-label) "  \2192";position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;white-space:nowrap;color:#FBF7EE;font:inherit;letter-spacing:.01em;padding:0 18px;transform:translateX(46px);opacity:0;transition:transform .34s cubic-bezier(.22,1,.36,1),opacity .3s ease;pointer-events:none;}
-  .ih-btn:hover::after{transform:translateX(0);opacity:1;}
-  .ih-btn.ih-neutral:hover{border-color:var(--accent);}
-  .ih-btn:disabled::before,.ih-btn:disabled::after{display:none;}
-  .ih-btn:disabled:hover .ih-label{transform:none;opacity:1;}
-  @media (prefers-reduced-motion: reduce){
-    .ih-btn .ih-label,.ih-btn::before,.ih-btn::after{transition:none;}
-    .ih-btn:hover .ih-label{transform:none;opacity:1;}
-    .ih-btn:hover::before{transform:none;}
-    .ih-btn:hover::after{opacity:0;}
-  }
   .btn-brand{background:var(--accent);color:#fff;width:100%;box-shadow:0 12px 24px -16px rgba(78,124,119,.9);}
   .btn-brand:active{background:var(--accent-dark);}
   .btn-brand:disabled{background:var(--muted3);cursor:not-allowed;color:#fff;}
@@ -1300,46 +1282,6 @@ function render(html, silent){
   void app.offsetWidth;
   app.classList.add('enter');
 }
-
-// Interactive hover buttons: wrap each primary/secondary CTA's label in one span and
-// stash the label in data-label so a CSS layer can render the incoming "label →" without
-// duplicating the button's textContent (keeps copy/label toggles working). Runs on every
-// render and pop-up via a MutationObserver.
-function enhanceHoverButtons(){
-  var list = document.querySelectorAll('.btn-primary:not([data-ih]),.btn-brand:not([data-ih]),.btn-secondary:not([data-ih])');
-  for (var i = 0; i < list.length; i++){
-    var el = list[i];
-    var label = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    if (el.childElementCount > 0 || !label){ el.setAttribute('data-ih', 'skip'); continue; }
-    el.setAttribute('data-ih', '1');
-    el.setAttribute('data-label', label);
-    el.classList.add('ih-btn');
-    if (el.classList.contains('btn-secondary')) el.classList.add('ih-neutral');
-    el.innerHTML = '<span class="ih-label">' + escapeHtml(label) + '</span>';
-  }
-  // Re-wrap any button whose label span got flattened by an in-place textContent
-  // change (e.g. a "Saving…" flash) once its original label is back.
-  var wrapped = document.querySelectorAll('.ih-btn[data-label]');
-  for (var j = 0; j < wrapped.length; j++){
-    var w = wrapped[j];
-    if (w.childElementCount === 0){
-      var cur = (w.textContent || '').replace(/\s+/g, ' ').trim();
-      if (cur && cur === w.getAttribute('data-label')){
-        w.innerHTML = '<span class="ih-label">' + escapeHtml(cur) + '</span>';
-      }
-    }
-  }
-}
-var _ihQueued = false;
-function _ihSchedule(){
-  if (_ihQueued) return;
-  _ihQueued = true;
-  requestAnimationFrame(function(){ _ihQueued = false; enhanceHoverButtons(); });
-}
-try {
-  new MutationObserver(_ihSchedule).observe(document.body, { childList: true, subtree: true });
-} catch (e){}
-_ihSchedule();
 
 function burstSparkles(){ /* retired — convergence uses the gather, not confetti */ }
 function elCenter(el){ const r = el.getBoundingClientRect(); return [r.left + r.width/2, r.top + r.height/2]; }
