@@ -2821,7 +2821,7 @@ function stillToHearHtml(plan){
   return '<p class="section-label" style="margin-top:0;">Still to hear from</p>' +
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">'+faces+'<span style="font-size:14px;color:var(--text);font-weight:500;">'+txt+'</span></div>';
 }
-function availBreakdownHtml(plan, d, pct){
+function availBreakdownHtml(plan, d, pct, hideBar){
   const resp = plan.dayResponses.filter(r => r.date === d);
   const avail = resp.filter(r => r.state !== 'no').map(r => plan.friends.find(f => f.id === r.friend_id)).filter(Boolean);
   const cant = resp.filter(r => r.state === 'no').map(r => plan.friends.find(f => f.id === r.friend_id)).filter(Boolean);
@@ -2831,7 +2831,7 @@ function availBreakdownHtml(plan, d, pct){
     '<div class="avail" style="height:6px;"><span style="width:'+pct+'%;"></span></div>' +
     '<span style="font-size:12px;color:var(--muted1);font-weight:600;white-space:nowrap;">'+avail.length+' free</span></div>';
   return '<div style="padding:4px 14px 16px;"><div style="border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:14px;">' +
-    bar +
+    (hideBar ? '' : bar) +
     '<div class="brk"><span class="blab" style="color:var(--free-ink);">Free</span>'+faces(avail)+'</div>' +
     '<div class="brk"><span class="blab" style="color:var(--no);">Can\'t</span>'+faces(cant)+'</div>' +
     '</div></div>';
@@ -3004,7 +3004,7 @@ function renderDayPicker(plan, me){
       chev +
       '</div>' +
       miniBar +
-      (reveal ? '<div class="vr-detail">'+availBreakdownHtml(plan, d, pct)+'</div>' : '') +
+      (reveal ? '<div class="vr-detail">'+availBreakdownHtml(plan, d, pct, true)+'</div>' : '') +
       '</div>';
   }
 
@@ -3632,7 +3632,7 @@ function myPhotoControlHtml(plan, me){
       '<div style="font-weight:600;font-size:14.5px;color:var(--text);letter-spacing:-0.01em;">'+escapeHtml(f.name)+' <span class="muted" style="font-weight:500;">(you)</span></div>' +
       '<label class="myPhotoLabel" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;margin-top:2px;">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>' +
-        (has ? 'Change your headshot' : 'Add a headshot') +
+        (has ? 'Want to change your picture?' : 'Want to add a picture?') +
         '<input type="file" accept="image/*" id="myPhotoInput" style="display:none;">' +
       '</label>' +
     '</div>' +
@@ -3647,7 +3647,7 @@ function myPhotoControlHtmlCompact(plan, me){
     '<label class="myPhotoLabel" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted1);cursor:pointer;">' +
       avatarHtml(f, 24) +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>' +
-      (has ? 'Change your headshot' : 'Add your headshot') +
+      (has ? 'Want to change your picture?' : 'Want to add a picture?') +
       '<input type="file" accept="image/*" id="myPhotoInput" style="display:none;">' +
     '</label>' +
   '</div>';
