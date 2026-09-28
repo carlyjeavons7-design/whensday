@@ -2836,7 +2836,7 @@ function availBreakdownHtml(plan, d, pct, hideBar){
     '<div class="brk"><span class="blab" style="color:var(--no);">Can\'t</span>'+faces(cant)+'</div>' +
     '</div></div>';
 }
-function consensusBreakdownHtml(plan, d){
+function consensusBreakdownHtml(plan, d, hideBar){
   const resp = plan.dayResponses.filter(r => r.date === d);
   const grp = s => resp.filter(r => r.state === s).map(r => plan.friends.find(f => f.id === r.friend_id)).filter(Boolean);
   const pref = grp('preferred'), free = grp('free'), cant = grp('no');
@@ -2847,7 +2847,7 @@ function consensusBreakdownHtml(plan, d){
     '<div class="avail" style="height:6px;"><span style="width:'+pct+'%;"></span></div>' +
     '<span style="font-size:12px;color:var(--muted1);font-weight:600;white-space:nowrap;">'+availN+' free</span></div>';
   return '<div style="padding:4px 14px 16px;"><div style="border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:14px;">' +
-    bar +
+    (hideBar ? '' : bar) +
     '<div class="brk"><span class="blab" style="color:var(--pref-ink);">Prefer</span>'+faces(pref)+'</div>' +
     '<div class="brk"><span class="blab" style="color:var(--free-ink);">Free</span>'+faces(free)+'</div>' +
     '<div class="brk"><span class="blab" style="color:var(--no);">Can\'t</span>'+faces(cant)+'</div>' +
@@ -3338,6 +3338,8 @@ function renderResults(plan, opts){
     if (!plan.knownDates.length) return '';
     // Ordered most-available to least (availability, then how many prefer it, then date)
     const ordered = plan.knownDates.slice().sort((a,b) => {
+      const ea = isEliminated(plan,a)?1:0, eb = isEliminated(plan,b)?1:0;
+      if (ea !== eb) return ea - eb;
       const ra = rowsByDate[a] || { free:[], pref:[], no:[] };
       const rb = rowsByDate[b] || { free:[], pref:[], no:[] };
       const ca = ra.pref.length + ra.free.length, cb = rb.pref.length + rb.free.length;
@@ -3351,16 +3353,28 @@ function renderResults(plan, opts){
       const dd = new Date(d+'T00:00:00');
       const dow = dd.toLocaleDateString(undefined,{weekday:'short'});
       const dn = dd.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+      const elim = isEliminated(plan, d);
+      const prefN = r.pref.length, freeN = r.free.length, noN = r.no.length;
+      const responded = prefN + freeN + noN;
       const prefTag = r.pref.length ? '<span style="display:block;font-size:11px;font-weight:700;color:var(--pref-ink);white-space:nowrap;margin-top:2px;">✦ '+r.pref.length+' top</span>' : '';
       const countTag = canIds.length ? '<span style="font-size:12px;color:var(--muted1);white-space:nowrap;font-weight:600;">'+canIds.length+' free</span>'+prefTag : '';
-      return '<div class="avail-item" data-d="'+d+'">' +
+      const bar = responded ? ('<div style="display:flex;align-items:center;padding:4px 0 0;"><div style="flex:1;height:7px;border-radius:4px;background:var(--line);overflow:hidden;display:flex;'+(elim?'opacity:.5;':'')+'">' +
+        (prefN ? '<span style="display:block;height:100%;width:'+Math.round(prefN/responded*100)+'%;background:var(--pref);"></span>' : '') +
+        (freeN ? '<span style="display:block;height:100%;width:'+Math.round(freeN/responded*100)+'%;background:var(--free);"></span>' : '') +
+        (noN ? '<span style="display:block;height:100%;width:'+Math.round(noN/responded*100)+'%;background:var(--no);"></span>' : '') +
+        '</div></div>') : '';
+      const dateStyle = elim ? 'text-decoration:line-through;color:var(--muted2);' : '';
+      const elimNote = elim ? '<p style="margin:7px 0 0;font-size:11.5px;color:var(--no);font-weight:600;">✕ Eliminated — most of the group can\'t make this day.</p>' : '';
+      return '<div class="avail-item'+(elim?' elim':'')+'" data-d="'+d+'"'+(elim?' style="opacity:.72;"':'')+'>' +
         '<div class="avail-head">' +
-        '<div class="vr-date" style="min-width:60px;"><span class="vr-dow">'+dow+'</span><span class="vr-dnum" style="font-size:17px;">'+dn+'</span></div>' +
+        '<div class="vr-date" style="min-width:60px;"><span class="vr-dow">'+dow+'</span><span class="vr-dnum" style="font-size:17px;'+dateStyle+'">'+dn+'</span></div>' +
         '<div style="flex:1;min-width:0;">'+facesFromIds(canIds, r.pref)+'</div>' +
         '<div style="text-align:right;">'+countTag+'</div>' +
         '<svg class="vr-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>' +
         '</div>' +
-        '<div class="vr-detail">'+consensusBreakdownHtml(plan, d)+'</div>' +
+        bar +
+        elimNote +
+        '<div class="vr-detail">'+consensusBreakdownHtml(plan, d, true)+'</div>' +
         '</div>';
     }).join('');
   }
@@ -3491,7 +3505,6 @@ function renderResults(plan, opts){
       navLink +
       topSectionsHtml(plan, (getMe(plan.id)||{}).id, '', true) +
       newDaysBanner +
-      myPhotoControlHtml(plan, me) +
       '<div class="card">' +
       stillToHearHtml(plan) +
       (answered.length === 0 ? '<p class="muted" style="margin:0 0 12px;">No one has answered yet &mdash; check back after people submit.</p>' : '') +
@@ -3502,7 +3515,8 @@ function renderResults(plan, opts){
       addOwnAvailLink +
       (isOrganizer(plan.id)
         ? '<div class="center"><a class="top-link" href="?plan='+plan.id+'&admin=1">Organizer dashboard</a></div>'
-        : '<div class="center"><a class="top-link" href="?plan='+plan.id+'&admin=1" style="font-size:11px;opacity:0.6;">Log in as admin</a></div>')
+        : '<div class="center"><a class="top-link" href="?plan='+plan.id+'&admin=1" style="font-size:11px;opacity:0.6;">Log in as admin</a></div>') +
+      myPhotoControlHtmlCompact(plan, me)
     );
     document.querySelectorAll('.result-cal-cell[data-d]').forEach(cell => {
       cell.onclick = () => showDetailFor(cell.getAttribute('data-d'));
