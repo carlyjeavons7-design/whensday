@@ -3056,7 +3056,10 @@ function renderDayPicker(plan, me){
     const hasSuggested = Object.keys(dayStates).some(d => !plan.candidateDates.includes(d));
     render(
       topSectionsHtml(plan, me.id, '', true) +
-      '<h2 style="margin:26px 0 10px;font-size:26px;letter-spacing:-0.03em;">Hey, '+escapeHtml(me.name)+'</h2>' +
+      '<div style="display:flex;align-items:center;gap:13px;margin:26px 0 10px;">' +
+        avatarHtml(plan.friends.find(function(x){return x.id===me.id;}) || {name:me.name}, 46) +
+        '<h2 style="margin:0;font-size:26px;letter-spacing:-0.03em;">Hey, '+escapeHtml(me.name)+'</h2>' +
+      '</div>' +
       voteLedeHtml(plan, me) +
       '<p class="subtitle" style="margin:0 0 26px;">Just tap the days you could make it — star one you\'d love most.</p>' +
       '<div id="days" style="margin-top:10px;">'+rows+'</div>' +
