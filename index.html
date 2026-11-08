@@ -2345,6 +2345,7 @@ async function renderCreate(){
     '<input type="text" id="location" placeholder="e.g. Tahoe cabin, or an address" maxlength="80" />' +
     '<div class="wh-q">Who’s invited?</div>' +
     '<div id="whoWrap" class="wc-people"></div>' +
+    '<div id="whoKnownWrap"></div>' +
     '<p class="muted" style="font-size:13px;margin:10px 0 0;">Add them now, or just share the link and let them hop in.</p>' +
     '<div class="wh-q">When could it work?</div>' +
     '<div class="cal-nav"><button type="button" id="prevM">&larr;</button><strong id="calLabel"></strong><button type="button" id="nextM">&rarr;</button></div>' +
@@ -2370,7 +2371,8 @@ async function renderCreate(){
     const wrap = document.getElementById('whoWrap');
     if (!wrap) return;
     let html = people.map(function(p, i){
-      return '<span class="wc-av" data-i="'+i+'" title="Remove" style="background:'+p.color+'">'+escapeHtml(p.name.charAt(0).toUpperCase())+'<span class="wc-x">&times;</span></span>';
+      const face = p.photo_url ? '<img src="'+p.photo_url+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">' : '';
+      return '<span class="wc-av" data-i="'+i+'" title="Remove" style="background:'+p.color+'">'+escapeHtml(p.name.charAt(0).toUpperCase())+face+'<span class="wc-x">&times;</span></span>';
     }).join('');
     html += whoAdding
       ? '<span class="wc-input"><input type="text" id="whoName" placeholder="Name" maxlength="40" autocomplete="off" /></span>'
@@ -2386,7 +2388,30 @@ async function renderCreate(){
     } else {
       document.getElementById('whoAdd').onclick = function(){ whoAdding = true; renderWho(); };
     }
+    renderWhoKnown();
   }
+  let whoKnown = null;
+  function renderWhoKnown(){
+    const wrap = document.getElementById('whoKnownWrap');
+    if (!wrap) return;
+    const picked = new Set(people.map(function(p){ return (p.name||'').trim().toLowerCase(); }));
+    const avail = (whoKnown || []).filter(function(p){ return p.name && !picked.has(p.name.trim().toLowerCase()); });
+    if (!avail.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = '<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin:14px 0 8px;">Invited before &middot; tap to add</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+      avail.map(function(p,i){ return '<button type="button" class="who-known" data-i="'+i+'" style="display:inline-flex;align-items:center;gap:7px;background:#FFFFFF;border:1px solid var(--border);border-radius:999px;padding:4px 12px 4px 5px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;min-height:auto;width:auto;box-shadow:none;letter-spacing:normal;text-transform:none;">' +
+        avatarHtml({ name:p.name, photo_url:p.photo_url, color:p.color }, 24) +
+        '<span>'+escapeHtml(p.name)+'</span><span style="color:var(--accent);font-size:16px;line-height:1;">+</span></button>'; }).join('') +
+      '</div>';
+    wrap.querySelectorAll('.who-known').forEach(function(btn){
+      const i = parseInt(btn.getAttribute('data-i'), 10);
+      btn.onclick = function(){ const kp = avail[i]; people.push({ name:kp.name, color:kp.color || avatarColor(kp.name), photo_url:kp.photo_url || '' }); renderWho(); };
+    });
+  }
+  (async function(){
+    if (currentUser){ try { const { data } = await sb.rpc('get_my_known_people', { p_plan_ids: [] }); whoKnown = data || []; } catch(e){ whoKnown = []; } }
+    renderWhoKnown();
+  })();
   renderWho();
   const dates = [];
   const today = new Date();
@@ -2484,7 +2509,12 @@ async function finalizeCreatePlan(payload){
     for (const person of payload.people){
       try {
         const { data: friend } = await sb.rpc('join_plan', { p_plan_id: plan.id, p_name: person.name, p_color: person.color || avatarColor(person.name) });
-        if (friend) plan.friends.push(friend);
+        if (friend){
+          if (person.photo_url){
+            try { await sb.rpc('set_my_photo', { p_plan_id: plan.id, p_friend_id: friend.id, p_url: person.photo_url }); friend.photo_url = person.photo_url; } catch(e){}
+          }
+          plan.friends.push(friend);
+        }
       } catch(e){}
     }
   }
@@ -3724,6 +3754,7 @@ function wireCoverPhotoEditor(plan, onChange){
 
 function attendeesEditorHtml(){
   return '<div id="attendeeList"></div>' +
+    '<div id="knownPeopleWrap"></div>' +
     '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;">' +
     '<label for="newAttendeeName">Add an attendee</label>' +
     '<input type="text" id="newAttendeeName" placeholder="Name" style="margin-bottom:16px;" maxlength="40" />' +
@@ -3833,7 +3864,52 @@ function wireAttendeesEditor(plan, onChange){
         }
       };
     });
+    renderKnownPeople();
   }
+
+  // ---- People you've invited before ----
+  let knownPeople = null;
+  async function addKnownPerson(person, btn){
+    if (btn) btn.disabled = true;
+    const { data: friend, error } = await sb.rpc('join_plan', { p_plan_id: plan.id, p_name: person.name, p_color: person.color || avatarColor(person.name) });
+    if (error || !friend){ showToast('Could not add '+person.name+'. Try again.'); if (btn) btn.disabled = false; return; }
+    if (person.photo_url){
+      try { await sb.rpc('set_my_photo', { p_plan_id: plan.id, p_friend_id: friend.id, p_url: person.photo_url }); friend.photo_url = person.photo_url; } catch(e){}
+    }
+    plan.friends.push(friend);
+    showToast(person.name + ' added.');
+    renderAttendeeList();
+    if (onChange) onChange();
+  }
+  function renderKnownPeople(){
+    const wrap = document.getElementById('knownPeopleWrap');
+    if (!wrap) return;
+    const onPlan = new Set(plan.friends.map(f => (f.name || '').trim().toLowerCase()));
+    const avail = (knownPeople || []).filter(p => p.name && !onPlan.has(p.name.trim().toLowerCase()));
+    if (!avail.length){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;">' +
+      '<p class="section-label" style="margin:0 0 4px;">People you’ve invited before</p>' +
+      '<p class="muted" style="margin:0 0 12px;font-size:12px;">Tap to add someone with the same name and photo.</p>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+      avail.map((p,i) => '<button type="button" class="known-person" data-i="'+i+'" style="display:inline-flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid var(--border);border-radius:999px;padding:5px 13px 5px 6px;font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;min-height:auto;width:auto;box-shadow:none;letter-spacing:normal;text-transform:none;">' +
+        avatarHtml({ name:p.name, photo_url:p.photo_url, color:p.color }, 26) +
+        '<span>'+escapeHtml(p.name)+'</span>' +
+        '<span style="color:var(--accent);font-size:17px;line-height:1;margin-left:1px;">+</span>' +
+        '</button>').join('') +
+      '</div></div>';
+    wrap.querySelectorAll('.known-person').forEach(btn => {
+      const i = parseInt(btn.getAttribute('data-i'), 10);
+      btn.onclick = () => addKnownPerson(avail[i], btn);
+    });
+  }
+  (async () => {
+    try {
+      const ids = (typeof getMyEvents === 'function' ? getMyEvents().map(e => e.id) : []);
+      const { data } = await sb.rpc('get_my_known_people', { p_plan_ids: ids });
+      knownPeople = data || [];
+    } catch(e){ knownPeople = []; }
+    renderKnownPeople();
+  })();
 
   function openMarkDaysModal(fid){
     const f = plan.friends.find(x => x.id === fid);
