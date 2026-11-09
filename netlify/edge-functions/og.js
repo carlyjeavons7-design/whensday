@@ -20,7 +20,11 @@ function card(title, rightChildren){
       e("div", { fontSize:90, fontWeight:700, color:"#2C2519", lineHeight:1.0, letterSpacing:-3 }, "works best?"),
     ]),
   ];
-  if (title) leftKids.push(e("div", { fontSize:44, fontWeight:700, color:"#4E7C77", letterSpacing:-0.5 }, title));
+  if (title) {
+    const tlen = title.length;
+    const fs = tlen > 42 ? 34 : (tlen > 26 ? 40 : 44);
+    leftKids.push(e("div", { fontSize:fs, fontWeight:700, color:"#4E7C77", letterSpacing:-0.5, lineHeight:1.12 }, title));
+  }
   const left = e("div", { width:690, height:540, display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"58px 60px" }, leftKids);
   const lockup = e("div", { position:"absolute", bottom:30, right:30, display:"flex", flexDirection:"row", alignItems:"center" }, [
     img(MARK, 34, 34, {}),
@@ -56,7 +60,7 @@ export default async (request) => {
       if (r.ok) {
         const rows = await r.json();
         const row = Array.isArray(rows) ? rows[0] : rows;
-        if (row) { title = (row.title || "").trim().slice(0, 34); cover = row.cover_photo_url || null; }
+        if (row) { title = (row.title || "").trim().slice(0, 80); cover = row.cover_photo_url || null; }
       }
     }
     const coverUrl = cover ? await coverDataUrl(cover) : null;
