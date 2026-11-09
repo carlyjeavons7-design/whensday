@@ -96,11 +96,12 @@
   .invitees-banner-title{font-size:12px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.12em;margin:0 0 12px;}
   .subtitle{color:var(--muted1);font-size:15px;margin:0 0 22px;line-height:1.55;}
   label{display:block;font-size:11.5px;font-weight:600;color:var(--muted2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.1em;}
-  input[type=text], input[type=password], input[type=date], input[type=email]{
+  input[type=text], input[type=password], input[type=date], input[type=email], textarea{
     width:100%;box-sizing:border-box;padding:14px 15px;font-size:16px;font-family:'General Sans',system-ui,sans-serif;font-weight:500;
     border:1px solid var(--border);border-radius:13px;background:#FFFFFF;color:var(--text);margin-bottom:16px;
   }
-  input:focus{outline:none;border-color:var(--pref);box-shadow:0 0 0 3px rgba(74,145,102,0.13);}
+  textarea{min-height:130px;line-height:1.45;resize:vertical;display:block;}
+  input:focus, textarea:focus{outline:none;border-color:var(--pref);box-shadow:0 0 0 3px rgba(74,145,102,0.13);}
   button{font-family:'General Sans',system-ui,sans-serif;font-weight:600;font-size:15.5px;border:none;border-radius:16px;padding:18px 26px;cursor:pointer;min-height:54px;transition:transform .25s cubic-bezier(.4,0,.2,1), background .25s ease, box-shadow .25s ease;}
   button:active{transform:scale(.99);}
   .btn-submit,.btn-primary{box-shadow:0 10px 22px -14px rgba(78,124,119,0.85);}
@@ -2321,7 +2322,7 @@ function topPickBannerHtml(plan){
 
 function planMetaHtml(plan){
   if (!plan.event_note) return '';
-  const note = '<p style="margin:0;color:var(--muted1);font-size:13px;line-height:1.4;">'+escapeHtml(plan.event_note)+'</p>';
+  const note = '<p style="margin:0;color:var(--muted1);font-size:13px;line-height:1.4;white-space:pre-wrap;">'+escapeHtml(plan.event_note)+'</p>';
   return '<div class="details-banner">' + note + '</div>';
 }
 
@@ -4149,7 +4150,7 @@ async function renderAdminPanel(plan){
     '<label for="editLocation">Location</label>' +
     '<input type="text" id="editLocation" value="'+escapeHtml(plan.location||'')+'" maxlength="80" />' +
     '<label for="editNote">Note about the plan</label>' +
-    '<input type="text" id="editNote" value="'+escapeHtml(plan.event_note||'')+'" maxlength="140" />' +
+    '<textarea id="editNote" rows="5" maxlength="600" placeholder="Add any details &mdash; what to bring, parking, dress code. Line breaks are kept.">'+escapeHtml(plan.event_note||'')+'</textarea>' +
     '<label for="editTime">Time (fixed for every day)</label>' +
     '<input type="text" id="editTime" value="'+escapeHtml(plan.time_label||'')+'" maxlength="60" placeholder="e.g. 7:00-9:00 PM, or leave blank for all day" />' +
     '<div class="error" id="detailsErr" style="display:none;"></div>' +
